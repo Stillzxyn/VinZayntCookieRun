@@ -1,4 +1,4 @@
-package cookierun.interfaces;
+package interfaces;
 
 /**
  * Interface for objects that are spawned into the game world

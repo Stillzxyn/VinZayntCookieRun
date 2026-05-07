@@ -1,4 +1,4 @@
-package cookierun.util;
+package util;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;

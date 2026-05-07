@@ -1,4 +1,4 @@
-package cookierun.model;
+package model;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;

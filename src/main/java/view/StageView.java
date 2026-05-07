@@ -1,7 +1,8 @@
-package cookierun.view;
+package view;
 
-import cookierun.CookieRunApp;
-import cookierun.controller.GameController;
+import application.CookieRunApp;
+import controller.GameController;
+import model.Cookie;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
@@ -28,20 +29,21 @@ public class StageView {
     private final GameController   ctrl;
     private final StackPane        root;
     private final Canvas           canvas;
+    private final int              cookieIndex;
     private AnimationTimer         loop;
     private long                   lastNano = 0;
 
     private double bgOff = 0, groundOff = 0;
     private VBox   gameOverOverlay;
 
-    public StageView(CookieRunApp app, int cookieIndex) {
-        this.app    = app;
-        this.ctrl   = new GameController(cookieIndex);
-        this.canvas = new Canvas(W, H);
+    public StageView(CookieRunApp app, int cookieIndex, Cookie cookie) {
+        this.app         = app;
+        this.cookieIndex = cookieIndex;
+        this.ctrl        = new GameController(cookie);
+        this.canvas      = new Canvas(W, H);
         buildGameOver();
         root = new StackPane(canvas);
         bindInput();
-
     }
 
 
@@ -257,7 +259,7 @@ public class StageView {
         coinsLbl.setTextFill(Color.web("#FFD700"));
 
         Button retry = btn("▶  Play Again", "#FF8C00", "#FF4500");
-        retry.setOnAction(e -> app.startGame(ctrl.getCookie().getCookieIndex()));
+        retry.setOnAction(e -> app.startGame(cookieIndex));
 
         Button home = btn("⌂  Home", "#555555", "#333333");
         home.setOnAction(e -> app.showHomePage());

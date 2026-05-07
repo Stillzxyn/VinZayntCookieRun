@@ -1,7 +1,10 @@
-package cookierun;
+package application;
 
-import cookierun.view.HomePageView;
-import cookierun.view.StageView;
+import model.Cookie;
+import model.CookieList;
+import view.CookieSelectView;
+import view.HomePageView;
+import view.StageView;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -12,6 +15,9 @@ public class CookieRunApp extends Application {
     public static final int HEIGHT = 450;
 
     private Stage primaryStage;
+
+    // Default to BraveGinger (index 6) — the only cookie with sprites
+    private int selectedCookieIndex = 6;
 
     @Override
     public void start(Stage stage) {
@@ -28,11 +34,26 @@ public class CookieRunApp extends Application {
         primaryStage.setScene(scene);
     }
 
+    public void showCookieSelect() {
+        CookieSelectView select = new CookieSelectView(this);
+        Scene scene = new Scene(select.getRoot(), WIDTH, HEIGHT);
+        primaryStage.setScene(scene);
+    }
+
     public void startGame(int cookieIndex) {
-        StageView stage = new StageView(this, cookieIndex);
+        Cookie cookie = CookieList.create(cookieIndex);   // ← one clear creation point
+        StageView stage = new StageView(this, cookieIndex, cookie);
         Scene scene = new Scene(stage.getRoot(), WIDTH, HEIGHT);
         primaryStage.setScene(scene);
         stage.startGame();
+    }
+
+    public int getSelectedCookieIndex() {
+        return selectedCookieIndex;
+    }
+
+    public void setSelectedCookieIndex(int index) {
+        this.selectedCookieIndex = index;
     }
 
     public Stage getPrimaryStage() { return primaryStage; }

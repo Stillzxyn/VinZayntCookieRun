@@ -1,4 +1,4 @@
-package cookierun.interfaces;
+package interfaces;
 
 import javafx.geometry.Rectangle2D;
 

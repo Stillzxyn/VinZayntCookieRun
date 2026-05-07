@@ -1,4 +1,4 @@
-package cookierun.interfaces;
+package interfaces;
 
 /**
  * Interface for any object that updates its state each game frame.

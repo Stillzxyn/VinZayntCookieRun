@@ -1,7 +1,8 @@
-package cookierun.controller;
+package controller;
 
-import cookierun.model.*;
+
 import javafx.scene.canvas.GraphicsContext;
+import model.*;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,8 +40,8 @@ public class GameController {
 
     private final Random rng = new Random();
 
-    public GameController(int cookieIndex) {
-        this.cookie = new Cookie(cookieIndex);
+    public GameController(Cookie cookie) {
+        this.cookie = cookie;
     }
 
     // INPUT
