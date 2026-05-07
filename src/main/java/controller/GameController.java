@@ -1,8 +1,14 @@
 package controller;
 
-
 import javafx.scene.canvas.GraphicsContext;
-import model.*;
+import entity.base.Cookie;
+import entity.base.Physics;
+import entity.base.GameObject;
+import entity.base.Obstacle;
+import entity.objects.GroundObstacle;
+import entity.objects.AirObstacle;
+import entity.items.Collectible;
+import entity.items.HealthItem;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,7 +17,7 @@ import java.util.Random;
 
 public class GameController {
 
-    public static final double GROUND_Y   = Cookie.GROUND_Y;
+    public static final double GROUND_Y   = Physics.GROUND_Y;
     public static final double GAME_WIDTH = 800.0;
 
     private final Cookie cookie;
@@ -50,7 +56,6 @@ public class GameController {
         if (!paused && !gameOver)
             cookie.jump();
     }
-
     public void onSlide() {
         if (!paused && !gameOver)
             cookie.slideDown();
@@ -66,7 +71,6 @@ public class GameController {
     }
 
     // UPDATE
-
     public void update(double delta) {
 
         if (paused || gameOver)
@@ -81,7 +85,7 @@ public class GameController {
         cookie.update(delta);
 
         // HP drain
-        cookie.decreaseHp(delta * 5);
+        cookie.decreaseHp(delta * 0.2);
 
         if(cookie.getHp() <= 0) {
             gameOver = true;
