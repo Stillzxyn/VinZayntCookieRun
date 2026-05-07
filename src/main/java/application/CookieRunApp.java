@@ -1,10 +1,10 @@
 package application;
 
-import model.Cookie;
-import model.CookieList;
-import view.CookieSelectView;
-import view.HomePageView;
-import view.StageView;
+import entity.base.Cookie;
+import gamemanager.CookieList;
+import gui.CookieSelectView;
+import gui.HomePageView;
+import gui.StageView;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -16,8 +16,8 @@ public class CookieRunApp extends Application {
 
     private Stage primaryStage;
 
-    // Default to BraveGinger (index 6) — the only cookie with sprites
-    private int selectedCookieIndex = 6;
+    // Default to Honey Butter (index 0) — first available cookie
+    private int selectedCookieIndex = 0;
 
     @Override
     public void start(Stage stage) {
