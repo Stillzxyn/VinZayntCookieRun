@@ -1,6 +1,7 @@
 plugins {
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 group = 'cookierun'
@@ -11,8 +12,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_22
+    targetCompatibility = JavaVersion.VERSION_22
 }
 
 javafx {
@@ -23,6 +24,7 @@ javafx {
 application {
     mainClass = 'cookierun.CookieRunApp'
     mainModule = 'CookieRun'
+    applicationDefaultJvmArgs = ['--enable-native-access=javafx.graphics']
 }
 sourceSets {
     main {
@@ -37,4 +39,10 @@ jar {
             'Main-Class': 'cookierun.CookieRunApp'
         )
     }
+}
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+}
+kotlin {
+    jvmToolchain(22)
 }

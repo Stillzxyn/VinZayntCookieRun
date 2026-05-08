@@ -2,15 +2,15 @@ package gui;
 
 import application.CookieRunApp;
 import javafx.animation.AnimationTimer;
+import javafx.concurrent.Task;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.*;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 
 /**
  * Home Page: title, Play button, Select Cookie button.
@@ -35,55 +35,80 @@ public class HomePageView {
             }
         }.start();
 
-        // Title
-        Label sub = new Label("VinZaynt's");
-        sub.setFont(Font.font("Arial", FontWeight.NORMAL, 14));
-        sub.setTextFill(Color.web("#FFD580"));
+        // Content container (will be filled once images load)
+        VBox contentContainer = new VBox(5);
+        contentContainer.setAlignment(Pos.CENTER);
+        contentContainer.getChildren().add(new Label("Loading..."));
 
-        Label title = new Label("COOKIE RUN");
-        title.setFont(Font.font("Impact", FontWeight.BOLD, 62));
-        title.setTextFill(Color.web("#FF6B00"));
-        title.setStyle("-fx-effect: dropshadow(gaussian,#FF3300,14,0.5,3,3);");
+        root = new StackPane(bg, contentContainer);
 
-        VBox titleBox = new VBox(0, sub, title);
-        titleBox.setAlignment(Pos.CENTER);
+        // Load images asynchronously to prevent UI freeze
+        loadImagesAsync(contentContainer);
+    }
 
-        // Play button
-        Button play = new Button("▶  PLAY");
-        play.setStyle("""
-            -fx-background-color: linear-gradient(to bottom,#FF8C00,#FF4500);
-            -fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;
-            -fx-padding: 12 52; -fx-background-radius: 30; -fx-cursor: hand;
-            -fx-effect: dropshadow(gaussian,#000,8,0.4,2,3);
-            """);
-        play.setOnAction(e -> app.startGame(app.getSelectedCookieIndex()));
+    private void loadImagesAsync(VBox contentContainer) {
+        Task<VBox> task = new Task<VBox>() {
+            @Override
+            protected VBox call() throws Exception {
+                // Load images on background thread
+                Image subtitleFile = new Image(getClass().getResourceAsStream("/HomePage/Subtitle.png"));
+                Image titleImageFile = new Image(getClass().getResourceAsStream("/HomePage/HomeTitle.png"));
+                Image greenButtonFile = new Image(getClass().getResourceAsStream("/HomePage/GreenButton.png"));
+                Image blueButtonFile = new Image(getClass().getResourceAsStream("/HomePage/BlueButton.png"));
 
-        // Select Cookie button
-        Button select = new Button("🍪  Select Cookie");
-        select.setStyle("""
-            -fx-background-color: linear-gradient(to bottom,#7B2FBE,#4A1080);
-            -fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold;
-            -fx-padding: 10 36; -fx-background-radius: 30; -fx-cursor: hand;
-            -fx-effect: dropshadow(gaussian,#000,6,0.3,1,2);
-            """);
-        select.setOnAction(e -> app.showCookieSelect());
+                ImageView subtitle = new ImageView(subtitleFile);
+                subtitle.setFitWidth(75);
+                subtitle.setFitHeight(20);
+                subtitle.setPreserveRatio(true);
 
-        VBox content = new VBox(20, titleBox, play, select);
-        content.setAlignment(Pos.CENTER);
+                VBox titleBox = new VBox(2);
+                titleBox.setAlignment(Pos.CENTER);
+                titleBox.getChildren().add(subtitle);
 
-        root = new StackPane(bg, content);
+                ImageView titleImage = new ImageView(titleImageFile);
+                titleImage.setFitWidth(400);
+                titleImage.setFitHeight(150);
+                titleImage.setPreserveRatio(true);
+                titleBox.getChildren().add(titleImage);
+
+                ImageView playButton = new ImageView(greenButtonFile);
+                playButton.setFitWidth(186);
+                playButton.setFitHeight(51);
+                playButton.setPreserveRatio(false);
+                playButton.setStyle("-fx-cursor: hand;");
+                playButton.setOnMouseClicked(e -> app.startGame(app.getSelectedCookieIndex()));
+
+                ImageView selectButton = new ImageView(blueButtonFile);
+                selectButton.setFitWidth(186);
+                selectButton.setFitHeight(51);
+                selectButton.setPreserveRatio(false);
+                selectButton.setStyle("-fx-cursor: hand;");
+                selectButton.setOnMouseClicked(e -> app.showCookieSelect());
+
+                VBox content = new VBox(5, titleBox, selectButton, playButton);
+                content.setAlignment(Pos.CENTER);
+                return content;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            contentContainer.getChildren().clear();
+            contentContainer.getChildren().add(task.getValue());
+        });
+
+        new Thread(task, "ImageLoader").start();
     }
 
     private void drawBg(GraphicsContext gc, double off) {
         gc.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#1A0A3C")),
-                new Stop(1, Color.web("#8B2FC9"))));
+                new Stop(0, Color.web("#71C5CF")),
+                new Stop(1, Color.web("#EBFDD3"))));
         gc.fillRect(0, 0, CookieRunApp.WIDTH, CookieRunApp.HEIGHT);
 
-        gc.setFill(Color.web("#3D1A6E"));
+        gc.setFill(Color.web("#84E18C"));
         gc.fillRect(0, CookieRunApp.HEIGHT - 80, CookieRunApp.WIDTH, 80);
 
-        gc.setFill(Color.web("#5A2A9A", 0.4));
+        gc.setFill(Color.web("#78C58C", 0.4));
         for (int i = -1; i < 14; i++)
             gc.fillRect(i * 60 - off % 60, CookieRunApp.HEIGHT - 80, 30, 80);
 

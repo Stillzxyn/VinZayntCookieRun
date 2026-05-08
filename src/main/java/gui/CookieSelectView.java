@@ -1,7 +1,7 @@
 package gui;
 
 import application.CookieRunApp;
-import gamemanager.CookieList;
+import entities.cookies.CookieList;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
@@ -50,10 +50,9 @@ public class CookieSelectView {
         Label heading = new Label("SELECT YOUR COOKIE");
         heading.setFont(Font.font("Impact", FontWeight.BOLD, 36));
         heading.setTextFill(Color.web("#FFD700"));
-        heading.setStyle("-fx-effect: dropshadow(gaussian,#FF6600,10,0.4,2,2);");
 
         // Selected name label - DECLARE EARLY before cards
-        nameLabel = new Label(CookieList.ALL.get(selectedIndex).name());
+        nameLabel = new Label(CookieList.ALL.get(selectedIndex).getDisplayName());
         nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         nameLabel.setTextFill(Color.web("#FFE066"));
         nameLabel.setStyle("-fx-effect: dropshadow(gaussian,#000,6,0.5,1,1);");
@@ -69,7 +68,7 @@ public class CookieSelectView {
             // Click handler
             card.getCardUI().setOnMouseClicked(e -> {
                 selectedIndex = index;
-                nameLabel.setText(CookieList.ALL.get(index).name());
+                nameLabel.setText(CookieList.ALL.get(index).getDisplayName());
                 refreshCards();
             });
 
@@ -107,7 +106,6 @@ public class CookieSelectView {
 
         VBox content = new VBox(18, heading, cardRow, nameLabel, buttons);
         content.setAlignment(Pos.CENTER);
-
         root = new StackPane(bg, content);
     }
 

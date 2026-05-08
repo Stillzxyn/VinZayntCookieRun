@@ -1,8 +1,8 @@
 package gui;
 
 import application.CookieRunApp;
-import controller.GameController;
-import entity.base.Cookie;
+import entities.base.Cookie;
+import game.GameController;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
@@ -26,7 +26,7 @@ public class StageView {
     private static final double GY = GameController.GROUND_Y;
 
     private final CookieRunApp     app;
-    private final GameController   ctrl;
+    private final GameController ctrl;
     private final StackPane        root;
     private final Canvas           canvas;
     private final int              cookieIndex;
@@ -174,7 +174,7 @@ public class StageView {
         double hp = ctrl.getCookie().getHp();
         double maxHp = ctrl.getCookie().getMaxHp();
 
-        double barWidth = 220;
+        double barWidth = 220*ctrl.getCookie().getMaxHpValue()/100;
         double barHeight = 18;
         double x = 16;
         double y = 52;

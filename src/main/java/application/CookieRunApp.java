@@ -1,7 +1,7 @@
 package application;
 
-import entity.base.Cookie;
-import gamemanager.CookieList;
+import entities.base.Cookie;
+import entities.cookies.CookieList;
 import gui.CookieSelectView;
 import gui.HomePageView;
 import gui.StageView;
@@ -41,7 +41,7 @@ public class CookieRunApp extends Application {
     }
 
     public void startGame(int cookieIndex) {
-        Cookie cookie = CookieList.create(cookieIndex);   // ← one clear creation point
+        Cookie cookie = CookieList.get(cookieIndex);
         StageView stage = new StageView(this, cookieIndex, cookie);
         Scene scene = new Scene(stage.getRoot(), WIDTH, HEIGHT);
         primaryStage.setScene(scene);

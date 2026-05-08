@@ -1,6 +1,6 @@
 package gui;
 
-import gamemanager.CookieList;
+import entities.base.Cookie;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -10,7 +10,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 
 /**
  * A card representing a single cookie in the selection screen.
@@ -18,14 +17,14 @@ import javafx.scene.text.FontWeight;
  */
 public class CookieSelectionCard {
 
-    private final CookieList.Entry entry;
+    private final Cookie cookie;
     private final int index;
     private boolean selected = false;
     private VBox cardContainer;
     private StackPane iconPane;
 
-    public CookieSelectionCard(CookieList.Entry entry, int index) {
-        this.entry = entry;
+    public CookieSelectionCard(Cookie cookie, int index) {
+        this.cookie = cookie;
         this.index = index;
         buildCard();
     }
@@ -38,7 +37,7 @@ public class CookieSelectionCard {
         iconPane = buildIconPane();
 
         // Tier badge (positioned at top-right)
-        javafx.scene.control.Label tierLabel = new javafx.scene.control.Label(entry.tier());
+        javafx.scene.control.Label tierLabel = new javafx.scene.control.Label(cookie.getTier());
         tierLabel.setStyle("""
             -fx-background-color: linear-gradient(to bottom,#FFD700,#FFA500);
             -fx-text-fill: #333;
@@ -54,7 +53,7 @@ public class CookieSelectionCard {
         updateCheckmark(checkLabel);
 
         // HP display
-        javafx.scene.control.Label hpLabel = new javafx.scene.control.Label("HP: " + entry.maxHp());
+        javafx.scene.control.Label hpLabel = new javafx.scene.control.Label("HP: " + cookie.getMaxHpValue());
         hpLabel.setStyle("""
             -fx-text-fill: #90EE90;
             -fx-font-size: 11px;
@@ -63,8 +62,8 @@ public class CookieSelectionCard {
 
         // Price display (if not unlocked)
         javafx.scene.control.Label priceLabel = new javafx.scene.control.Label("");
-        if (!entry.unlocked()) {
-            priceLabel.setText(entry.price() + " coins");
+        if (!cookie.isUnlocked()) {
+            priceLabel.setText(cookie.getPrice() + " coins");
             priceLabel.setStyle("""
                 -fx-text-fill: #FFD700;
                 -fx-font-size: 10px;
@@ -76,7 +75,7 @@ public class CookieSelectionCard {
         VBox statsBox = new VBox(2);
         statsBox.setAlignment(Pos.CENTER);
         statsBox.getChildren().addAll(hpLabel);
-        if (!entry.unlocked()) {
+        if (!cookie.isUnlocked()) {
             statsBox.getChildren().add(priceLabel);
         }
 
@@ -96,17 +95,17 @@ public class CookieSelectionCard {
         // Fallback canvas
         Canvas fallback = new Canvas(50, 70);
         GraphicsContext gc = fallback.getGraphicsContext2D();
-        gc.setFill(Color.web(entry.hex()));
+        gc.setFill(Color.web(cookie.getHex()));
         gc.fillRoundRect(2, 2, 46, 66, 8, 8);
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Impact", 16));
-        gc.fillText(entry.name().substring(0, 1), 18, 40);
+        gc.fillText(cookie.getDisplayName().substring(0, 1), 18, 40);
 
         sp.getChildren().add(fallback);
 
         // Try to load the icon image
         try {
-            String iconPath = entry.iconPath();
+            String iconPath = cookie.getIconPath();
             // Remove leading slash if present for resource loading
             if (iconPath.startsWith("/")) {
                 iconPath = iconPath.substring(1);
@@ -161,10 +160,10 @@ public class CookieSelectionCard {
     }
 
     /**
-     * Get the cookie entry.
+     * Get the cookie object.
      */
-    public CookieList.Entry getEntry() {
-        return entry;
+    public Cookie getCookie() {
+        return cookie;
     }
 
     /**
