@@ -12,8 +12,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_22
-    targetCompatibility = JavaVersion.VERSION_22
+    sourceCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_24
 }
 
 javafx {
@@ -22,8 +22,7 @@ javafx {
 }
 
 application {
-    mainClass = 'cookierun.CookieRunApp'
-    mainModule = 'CookieRun'
+    mainClass = 'application.CookieRunApp'
     applicationDefaultJvmArgs = ['--enable-native-access=javafx.graphics']
 }
 sourceSets {
@@ -36,7 +35,7 @@ sourceSets {
 jar {
     manifest {
         attributes(
-            'Main-Class': 'cookierun.CookieRunApp'
+            'Main-Class': 'application.CookieRunApp'
         )
     }
 }
@@ -44,5 +43,5 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 kotlin {
-    jvmToolchain(22)
+    jvmToolchain(24)
 }

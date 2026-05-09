@@ -1,11 +1,14 @@
 package game;
 
 import javafx.scene.canvas.GraphicsContext;
-import entities.base.Cookie;
-import entities.base.Physics;
-import entities.base.GameObject;
-import entities.collectibles.Collectible;
-import abilities.implementations.MagneticAbility;
+import core.entities.base.Cookie;
+import core.entities.base.Physics;
+import core.entities.base.GameObject;
+import core.entities.collectibles.Collectible;
+import core.abilities.implementations.MagneticAbility;
+import game.managers.ObstacleManager;
+import game.managers.CollectibleManager;
+import game.managers.HealthManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +21,10 @@ public class GameController {
 
     public static final double GROUND_Y   = Physics.GROUND_Y;
     public static final double GAME_WIDTH = 800.0;
+
     private final Cookie cookie;
+    private final core.stages.Stage stage;
+    private final double difficultyMultiplier;
 
     // Managers
     private final ObstacleManager obstacleManager = new ObstacleManager();
@@ -36,8 +42,22 @@ public class GameController {
     private boolean gameOver = false;
     private boolean paused = false;
 
-    public GameController(Cookie cookie) {
+    // Red overlay for hit feedback
+    private double redOverlayTimer = 0;
+    private static final double RED_OVERLAY_TOTAL = 0.7;  // 0.2s in + 0.2s stay + 0.3s out
+
+    /**
+     * Create a game controller for the given cookie and stage.
+     * Resets the cookie to starting state for a new game.
+     * @param cookie The cookie to control
+     * @param stage The stage with difficulty multiplier
+     */
+    public GameController(Cookie cookie, core.stages.Stage stage) {
         this.cookie = cookie;
+        this.stage = stage;
+        this.difficultyMultiplier = stage.getDifficultyMultiplier();
+        // Reset cookie to initial state for new game
+        cookie.reset();
     }
 
     // INPUT
@@ -55,6 +75,17 @@ public class GameController {
         cookie.releaseSlide();
     }
 
+    public void onAbility() {
+        if (!paused && !gameOver && cookie.getAbility() != null) {
+            // Activate the ability
+            if (cookie.getAbility() instanceof core.abilities.implementations.GhostAbility) {
+                core.abilities.implementations.GhostAbility ghost =
+                    (core.abilities.implementations.GhostAbility) cookie.getAbility();
+                ghost.activate();
+            }
+        }
+    }
+
     public void togglePause() {
         if (!gameOver)
             paused = !paused;
@@ -62,6 +93,13 @@ public class GameController {
 
     // UPDATE
     public void update(double delta) {
+        long frameStartTime = System.nanoTime();
+
+        // Update red overlay timer (even when paused)
+        if (redOverlayTimer > 0) {
+            redOverlayTimer -= delta;
+        }
+
         if (paused || gameOver)
             return;
 
@@ -70,7 +108,13 @@ public class GameController {
 
         score += (int)(delta * currentSpeed * 0.05);
 
+        long cookieUpdateStart = System.nanoTime();
         cookie.update(delta);
+        long cookieUpdateTime = (System.nanoTime() - cookieUpdateStart) / 1_000_000;
+        if (cookieUpdateTime > 3) {
+            System.out.println("[PROFILE] Cookie update: " + cookieUpdateTime + "ms");
+        }
+
         cookie.decreaseHp(delta * 0.2);
 
         if(cookie.getHp() <= 0) {
@@ -85,6 +129,12 @@ public class GameController {
         // Update cookie ability
         if (cookie.getAbility() != null) {
             cookie.getAbility().update(this, cookie, delta);
+            // Sync ghost state for GhostAbility
+            if (cookie.getAbility() instanceof core.abilities.implementations.GhostAbility) {
+                core.abilities.implementations.GhostAbility ghost =
+                    (core.abilities.implementations.GhostAbility) cookie.getAbility();
+                cookie.setGhost(ghost.isActive());
+            }
         }
 
         // Update game objects
@@ -95,7 +145,12 @@ public class GameController {
 
         // Check collisions
         boolean[] gameOverFlag = {gameOver};
-        obstacleManager.checkCollision(cookie, gameOverFlag);
+        double oldHp = cookie.getHp();
+        obstacleManager.checkCollision(cookie, gameOverFlag, difficultyMultiplier);
+        if (cookie.getHp() < oldHp) {
+            // Cookie was hit - trigger red overlay
+            redOverlayTimer = RED_OVERLAY_TOTAL;
+        }
         gameOver = gameOverFlag[0];
 
         if (gameOver) return;
@@ -114,6 +169,17 @@ public class GameController {
             obj.render(gc);
         }
         cookie.render(gc);
+
+        // Draw magnetic field indicator for magnetic cookies
+        if (cookie.getAbility() instanceof MagneticAbility) {
+            MagneticAbility magnetic = (MagneticAbility) cookie.getAbility();
+            double radius = magnetic.getMagneticRadius() * 0.5;
+            double cookieX = cookie.getX() + cookie.getWidth() - 20 ;
+            double cookieY = cookie.getY() + cookie.getHeight() - 20;
+
+            gc.setFill(javafx.scene.paint.Color.web("#FFD700", 0.2));
+            gc.fillOval(cookieX - radius, cookieY - radius, 120, 120);
+        }
     }
 
     // GETTERS
@@ -123,6 +189,29 @@ public class GameController {
     public boolean isPaused() { return paused; }
     public Cookie getCookie() { return cookie; }
     public double getGameTime() { return gameTime; }
+    public String getDifficulty() { return stage.getDifficulty(); }
+    public double getDifficultyMultiplier() { return difficultyMultiplier; }
+
+    /**
+     * Get the current red overlay opacity (0.0 to 1.0) based on hit feedback timing.
+     * Smooth fade: 0-0.2s fade in, 0.2-0.4s stay, 0.4-0.7s fade out
+     */
+    public double getRedOverlayOpacity() {
+        if (redOverlayTimer <= 0) return 0.0;
+
+        double elapsed = RED_OVERLAY_TOTAL - redOverlayTimer;
+
+        if (elapsed < 0.2) {
+            // Fade in: 0 to 1 over 0.2s
+            return elapsed / 0.2;
+        } else if (elapsed < 0.4) {
+            // Stay: full opacity for 0.2s
+            return 1.0;
+        } else {
+            // Fade out: 1 to 0 over 0.3s
+            return 1.0 - ((elapsed - 0.4) / 0.3);
+        }
+    }
 
     // For magnetic ability
     public List<GameObject> getGameObjects() { return gameObjects; }
