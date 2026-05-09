@@ -1,5 +1,6 @@
 package game;
 
+import core.abilities.CookieAbility;
 import javafx.scene.canvas.GraphicsContext;
 import core.entities.base.Cookie;
 import core.entities.base.Physics;
@@ -18,6 +19,7 @@ import java.util.List;
  * Much cleaner and shorter!
  */
 public class GameController {
+    private double cameraShake = 0;
 
     public static final double GROUND_Y   = Physics.GROUND_Y;
     public static final double GAME_WIDTH = 800.0;
@@ -64,6 +66,10 @@ public class GameController {
     public void onJump() {
         if (!paused && !gameOver)
             cookie.jump();
+    }
+    public void shakeCamera(double intensity) {
+
+        cameraShake = intensity;
     }
 
     public void onSlide() {
@@ -146,7 +152,7 @@ public class GameController {
         // Check collisions
         boolean[] gameOverFlag = {gameOver};
         double oldHp = cookie.getHp();
-        obstacleManager.checkCollision(cookie, gameOverFlag, difficultyMultiplier);
+        obstacleManager.checkCollision(cookie, gameOverFlag, difficultyMultiplier,this);
         if (cookie.getHp() < oldHp) {
             // Cookie was hit - trigger red overlay
             redOverlayTimer = RED_OVERLAY_TOTAL;
@@ -161,25 +167,74 @@ public class GameController {
         coins = scoreCoins[1];
 
         healthManager.checkCollision(cookie);
+        CookieAbility ability =
+                cookie.getAbility();
+
+        if (ability != null) {
+
+            ability.update(
+                    this,
+                    cookie,
+                    delta
+            );
+        }
+        if (cameraShake > 0) {
+
+            cameraShake -= delta * 20;
+
+            if (cameraShake < 0) {
+                cameraShake = 0;
+            }
+        }
     }
 
-    // RENDER
     public void render(GraphicsContext gc) {
-        for(GameObject obj : gameObjects) {
+
+        for (GameObject obj : gameObjects) {
+
             obj.render(gc);
         }
+
         cookie.render(gc);
 
-        // Draw magnetic field indicator for magnetic cookies
-        if (cookie.getAbility() instanceof MagneticAbility) {
-            MagneticAbility magnetic = (MagneticAbility) cookie.getAbility();
-            double radius = magnetic.getMagneticRadius() * 0.5;
-            double cookieX = cookie.getX() + cookie.getWidth() - 20 ;
-            double cookieY = cookie.getY() + cookie.getHeight() - 20;
+        // Draw magnetic field indicator
+        if (cookie.getAbility()
+                instanceof MagneticAbility) {
 
-            gc.setFill(javafx.scene.paint.Color.web("#FFD700", 0.2));
-            gc.fillOval(cookieX - radius, cookieY - radius, 120, 120);
+            MagneticAbility magnetic =
+                    (MagneticAbility)
+                            cookie.getAbility();
+
+            double radius =
+                    magnetic.getMagneticRadius() * 0.5;
+
+            double cookieX =
+                    cookie.getX()
+                            + cookie.getWidth()
+                            - 20;
+
+            double cookieY =
+                    cookie.getY()
+                            + cookie.getHeight()
+                            - 20;
+
+            gc.setFill(
+                    javafx.scene.paint.Color.web(
+                            "#FFD700",
+                            0.2
+                    )
+            );
+
+            gc.fillOval(
+                    cookieX - radius,
+                    cookieY - radius,
+                    120,
+                    120
+            );
         }
+
+        // IMPORTANT
+        collectibleManager.renderParticles(gc);
     }
 
     // GETTERS
@@ -222,5 +277,9 @@ public class GameController {
         for (Collectible c : collectibleManager.getCollectibles()) {
             ability.applyForceToCollectible(c, cookie);
         }
+    }
+    public double getCameraShake() {
+
+        return cameraShake;
     }
 }

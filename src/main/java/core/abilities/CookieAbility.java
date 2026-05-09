@@ -4,13 +4,43 @@ import core.entities.base.Cookie;
 import game.GameController;
 
 /**
- * Strategy interface for cookie special abilities.
- * Each ability controls its own logic and state.
+ * Strategy interface for cookie abilities.
  */
 public interface CookieAbility {
+
     /**
-     * Called each frame to update the ability.
-     * Ability has full access to the game controller and cookie.
+     * Update ability each frame.
      */
-    void update(GameController gc, Cookie cookie, double delta);
+    void update(
+            GameController gc,
+            Cookie cookie,
+            double delta
+    );
+
+    /**
+     * Activate ability.
+     */
+    void activate();
+
+    /**
+     * Is ability currently active?
+     */
+    boolean isActive();
+
+    /**
+     * Remaining cooldown.
+     */
+    double getCooldownRemaining();
+
+    /**
+     * Cooldown percent.
+     * 1.0 = ready
+     * 0.0 = just used
+     */
+    double getCooldownPercent();
+
+    /**
+     * Is this a passive ability?
+     */
+    boolean isPassive();
 }

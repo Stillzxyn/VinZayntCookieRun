@@ -157,25 +157,42 @@ public abstract class Cookie extends GameObject implements Animatable {
     // UPDATE
     @Override
     public void update(double delta) {
+
         if (state == State.DEAD) return;
+
         // HP drain
         decreaseHp(delta * 5);
-        if (hp <= 0) { die(); return; }
+
+        if (hp <= 0) {
+            die();
+            return;
+        }
+
         // Heal effect timer
-        if (healEffectTimer > 0) healEffectTimer -= delta;
+        if (healEffectTimer > 0) {
+            healEffectTimer -= delta;
+        }
+
         // Invincibility timer
-        if (invincibilityTimer > 0) invincibilityTimer -= delta;
+        if (invincibilityTimer > 0) {
+            invincibilityTimer -= delta;
+        }
         // Jump physics
         if (state == State.JUMPING) {
+
             physics.update(delta);
+
             if (physics.isOnGround()) {
+
                 state = State.RUNNING;
+
                 physics.setHeight(Physics.NORMAL_H);
+
                 setAnimation("RUN");
             }
         }
 
-        // Sync physics state back to GameObject for collision detection
+        // Sync physics state back to GameObject
         this.x = physics.getX();
         this.y = physics.getY();
         this.width = physics.getWidth();
@@ -183,8 +200,11 @@ public abstract class Cookie extends GameObject implements Animatable {
 
         // Animation timer
         frameTimer += delta;
+
         if (frameTimer >= FRAME_DUR) {
+
             frameTimer = 0;
+
             nextFrame();
         }
     }
@@ -339,8 +359,14 @@ public abstract class Cookie extends GameObject implements Animatable {
     public boolean isInvincible() {
         return invincibilityTimer > 0;
     }
-    public void setInvincible() {
-        invincibilityTimer = INVINCIBILITY_DURATION;
+    public void setInvincible(boolean value) {
+
+        if (value) {
+            invincibilityTimer = INVINCIBILITY_DURATION;
+        }
+        else {
+            invincibilityTimer = 0;
+        }
     }
 
     // RESET FOR NEW GAME
@@ -348,10 +374,19 @@ public abstract class Cookie extends GameObject implements Animatable {
      * Reset cookie to initial state for a new game.
      */
     public void reset() {
+
         hp = maxHp;
+
         state = State.RUNNING;
+
         healEffectTimer = 0;
+
+        isGhost = false;
+
+        invincibilityTimer = 0;
+
         physics.resetToStart();
+
         setAnimation("RUN");
     }
 }

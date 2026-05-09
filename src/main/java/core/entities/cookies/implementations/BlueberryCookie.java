@@ -17,6 +17,7 @@ public class BlueberryCookie extends Cookie {
         setMaxHpValue(110);
         setHp(110);
 
+
         // Grant magnetic coin ability
         this.ability = new MagneticAbility();
     }

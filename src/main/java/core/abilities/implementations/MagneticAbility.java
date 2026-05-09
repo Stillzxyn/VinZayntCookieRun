@@ -2,49 +2,109 @@ package core.abilities.implementations;
 
 import core.abilities.CookieAbility;
 import core.entities.base.Cookie;
-import core.entities.collectibles.Coin;
 import core.entities.collectibles.Collectible;
 import game.GameController;
 
 /**
- * Magnetic ability - pulls coins toward the cookie within a radius.
- * Only affects coins (Jelly is not magnetic).
+ * Magnetic Ability
+ * Passive ability for Blueberry Cookie.
+ * Pulls collectibles automatically.
  */
 public class MagneticAbility implements CookieAbility {
 
     private final double magneticRadius;
+
     private final double attractionStrength;
 
     public MagneticAbility() {
-        this(150.0, 800.0);
+
+        this(170.0, 850.0);
     }
 
-    public MagneticAbility(double magneticRadius, double attractionStrength) {
-        this.magneticRadius = magneticRadius;
-        this.attractionStrength = attractionStrength;
+    public MagneticAbility(
+            double magneticRadius,
+            double attractionStrength
+    ) {
+
+        this.magneticRadius =
+                magneticRadius;
+
+        this.attractionStrength =
+                attractionStrength;
     }
 
     @Override
-    public void update(GameController gc, Cookie cookie, double delta) {
-        // Apply magnetic force to all collectibles in the game
+    public void update(
+            GameController gc,
+            Cookie cookie,
+            double delta
+    ) {
+
+        // Always active
         gc.applyMagneticForceToCollectibles(this);
     }
 
-    // Public method for GameController to use
-    public void applyForceToCollectible(Collectible c, Cookie cookie) {
-        if (!(c instanceof Coin)) return;  // Only affect coins
+    @Override
+    public void activate() {
 
-        double targetX = cookie.getX() + cookie.getWidth() / 2;
-        double targetY = cookie.getY() + cookie.getHeight() / 2;
+        // Passive skill
+    }
 
-        c.applyMagneticForce(targetX, targetY, magneticRadius, attractionStrength);
+    @Override
+    public boolean isActive() {
+
+        return true;
+    }
+
+    @Override
+    public double getCooldownRemaining() {
+
+        return 0;
+    }
+
+    @Override
+    public double getCooldownPercent() {
+
+        return 1.0;
+    }
+
+    @Override
+    public boolean isPassive() {
+
+        return true;
+    }
+
+    /**
+     * Pull collectibles toward cookie.
+     */
+    public void applyForceToCollectible(
+            Collectible c,
+            Cookie cookie
+    ) {
+
+        double targetX =
+                cookie.getX()
+                        + cookie.getWidth() / 2;
+
+        double targetY =
+                cookie.getY()
+                        + cookie.getHeight() / 2;
+
+        c.applyMagneticForce(
+                targetX,
+                targetY,
+                magneticRadius,
+                attractionStrength
+        );
     }
 
     public double getMagneticRadius() {
+
         return magneticRadius;
     }
 
     public double getAttractionStrength() {
+
         return attractionStrength;
     }
 }

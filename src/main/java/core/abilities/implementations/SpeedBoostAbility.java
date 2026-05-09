@@ -5,20 +5,56 @@ import core.entities.base.Cookie;
 import game.GameController;
 
 /**
- * Speed Boost Ability - Makes the cookie faster by increasing jump velocity.
- * Used by Ninja Cookie.
+ * Speed Boost Ability
+ * Passive ability for Ninja Cookie.
  */
 public class SpeedBoostAbility implements CookieAbility {
 
     @Override
-    public void update(GameController gc, Cookie cookie, double delta) {
-        // Passive ability - no active update needed
+    public void update(
+            GameController gc,
+            Cookie cookie,
+            double delta
+    ) {
+
+        // Passive
     }
+
+    @Override
+    public void activate() {
+
+        // Passive
+    }
+
+    @Override
+    public boolean isActive() {
+
+        return true;
+    }
+
+    @Override
+    public double getCooldownRemaining() {
+
+        return 0;
+    }
+
+    @Override
+    public double getCooldownPercent() {
+
+        return 1.0;
+    }
+
+    @Override
+    public boolean isPassive() {
+
+        return true;
+    }
+
     /**
-     * Get the jump velocity multiplier for speed boost.
-     * Ninja Cookie jumps 20% higher/faster.
+     * Jump boost multiplier.
      */
     public double getJumpVelocityMultiplier() {
-        return 1.2;  // 20% faster jumps
+
+        return 1.2;
     }
 }
