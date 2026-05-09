@@ -2,6 +2,20 @@ package core.entities.base;
 
 import javafx.scene.canvas.GraphicsContext;
 
+/**
+ * Base class for every object in the game.
+ *
+ * Used for:
+ * - Player
+ * - Obstacles
+ * - Collectibles
+ *
+ * Provides:
+ * - Position
+ * - Size
+ * - Collision detection
+ * - Basic object lifecycle
+ */
 public abstract class GameObject {
 
     protected double x;
@@ -9,9 +23,6 @@ public abstract class GameObject {
 
     protected double width;
     protected double height;
-
-    protected double velocityX = 0;
-    protected double velocityY = 0;
 
     protected boolean alive = true;
 

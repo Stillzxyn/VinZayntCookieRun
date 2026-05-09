@@ -3,24 +3,35 @@ package core.abilities.implementations;
 import core.abilities.CookieAbility;
 import core.entities.base.Cookie;
 import core.entities.collectibles.Collectible;
+
 import game.GameController;
 
 /**
- * Magnetic Ability
- * Passive ability for Blueberry Cookie.
- * Pulls collectibles automatically.
+ * Magnetic ability for Blueberry Cookie.
+ *
+ * Effect:
+ * - Automatically pulls collectibles
+ * - Always active
  */
 public class MagneticAbility implements CookieAbility {
 
+    // Magnetic range
     private final double magneticRadius;
 
+    // Pull strength
     private final double attractionStrength;
 
+    /**
+     * Default constructor.
+     */
     public MagneticAbility() {
 
         this(170.0, 850.0);
     }
 
+    /**
+     * Custom constructor.
+     */
     public MagneticAbility(
             double magneticRadius,
             double attractionStrength
@@ -33,6 +44,9 @@ public class MagneticAbility implements CookieAbility {
                 attractionStrength;
     }
 
+    /**
+     * Update magnetic effect every frame.
+     */
     @Override
     public void update(
             GameController gc,
@@ -40,16 +54,23 @@ public class MagneticAbility implements CookieAbility {
             double delta
     ) {
 
-        // Always active
+        // Passive ability:
+        // continuously attract collectibles
         gc.applyMagneticForceToCollectibles(this);
     }
 
+    /**
+     * Passive skill does not activate manually.
+     */
     @Override
     public void activate() {
 
-        // Passive skill
+        // No activation needed
     }
 
+    /**
+     * Passive ability is always active.
+     */
     @Override
     public boolean isActive() {
 
@@ -75,10 +96,10 @@ public class MagneticAbility implements CookieAbility {
     }
 
     /**
-     * Pull collectibles toward cookie.
+     * Pull collectible toward the cookie.
      */
     public void applyForceToCollectible(
-            Collectible c,
+            Collectible collectible,
             Cookie cookie
     ) {
 
@@ -90,7 +111,7 @@ public class MagneticAbility implements CookieAbility {
                 cookie.getY()
                         + cookie.getHeight() / 2;
 
-        c.applyMagneticForce(
+        collectible.applyMagneticForce(
                 targetX,
                 targetY,
                 magneticRadius,
@@ -103,8 +124,8 @@ public class MagneticAbility implements CookieAbility {
         return magneticRadius;
     }
 
-    public double getAttractionStrength() {
-
-        return attractionStrength;
-    }
+//    public double getAttractionStrength() {
+//
+//        return attractionStrength;
+//    }
 }

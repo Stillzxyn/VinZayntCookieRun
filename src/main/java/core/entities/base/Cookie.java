@@ -2,17 +2,23 @@ package core.entities.base;
 
 import utils.Animatable;
 import core.abilities.CookieAbility;
-import core.abilities.implementations.SpeedBoostAbility;
+import core.abilities.implementations.JumpBoostAbility;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 /**
- * Abstract base class for all cookie characters.
- * Handles animation, HP, and rendering.
- * Physics is delegated to the Physics class.
+ * Base class for all playable cookies.
+ * Responsibilities:
+ * - Handle animation
+ * - Handle HP system
+ * - Handle movement and physics
+ * - Support abilities
+ * - Render cookie sprites/effects
  */
-public abstract class Cookie extends GameObject implements Animatable {
+public abstract class Cookie
+        extends GameObject
+        implements Animatable {
     // PHYSICS DELEGATION
     private final Physics physics;
 
@@ -74,7 +80,13 @@ public abstract class Cookie extends GameObject implements Animatable {
         loadFrameSet(deadFrames, "DEAD");
     }
 
-    private void loadFrameSet(Image[] frames, String state) {
+    /**
+     * Load sprite frames for a specific animation state.
+     */
+    private void loadFrameSet(
+            Image[] frames,
+            String state
+    ) {
         for (int i = 0; i < 4; i++) {
             String resourcePath =  "/CookieSprite/" + cookieName+"/"+cookieName + (i + 1) + ".png";
             // OR if cookieName includes "CookieSprite/" already, use this:
@@ -102,13 +114,18 @@ public abstract class Cookie extends GameObject implements Animatable {
     }
 
     // PLAYER ACTIONS
+    /**
+     * Player jump action.
+     * If the cookie has JumpBoostAbility,
+     * jump velocity becomes stronger.
+     */
     public void jump() {
         if (state == State.RUNNING && physics.isOnGround()) {
             state = State.JUMPING;
             physics.jump();
 
             // Apply speed boost if available
-            if (ability instanceof SpeedBoostAbility speedBoost) {
+            if (ability instanceof JumpBoostAbility speedBoost) {
                 double multiplier = speedBoost.getJumpVelocityMultiplier();
                 physics.setVelocityY(Physics.JUMP_VELOCITY * multiplier);
             }
@@ -118,6 +135,9 @@ public abstract class Cookie extends GameObject implements Animatable {
         }
     }
 
+    /**
+     * Start slide state.
+     */
     public void slideDown() {
         if (state == State.RUNNING) {
             state = State.SLIDING;
@@ -127,6 +147,9 @@ public abstract class Cookie extends GameObject implements Animatable {
         }
     }
 
+    /**
+     * Return from slide state back to running.
+     */
     public void releaseSlide() {
         if (state == State.SLIDING) {
             state = State.RUNNING;
@@ -136,6 +159,9 @@ public abstract class Cookie extends GameObject implements Animatable {
         }
     }
 
+    /**
+     * Kill the cookie and switch to DEAD animation.
+     */
     public void die() {
         state = State.DEAD;
         setAnimation("DEAD");
@@ -149,12 +175,24 @@ public abstract class Cookie extends GameObject implements Animatable {
     public void decreaseHp(double amount) {
         hp = Math.max(0, hp - amount);
     }
+    /**
+     * Heal the cookie and trigger heal effect.
+     */
     public void heal(double amount) {
         hp = Math.min(maxHp, hp + amount);
         healEffectTimer = 0.4;
     }
 
     // UPDATE
+    /**
+     * Main update loop.
+     * Handles:
+     * - HP drain
+     * - Physics update
+     * - Animation update
+     * - Invincibility timer
+     * - State synchronization
+     */
     @Override
     public void update(double delta) {
 
@@ -211,6 +249,13 @@ public abstract class Cookie extends GameObject implements Animatable {
 
 
     // RENDER
+    /**
+     * Render cookie sprite and visual effects.
+     * Effects:
+     * - Ghost transparency
+     * - Low HP flashing
+     * - Heal glow
+     */
     @Override
     public void render(GraphicsContext gc) {
         // Ghost mode transparency
@@ -238,8 +283,13 @@ public abstract class Cookie extends GameObject implements Animatable {
         gc.setGlobalAlpha(1.0);
     }
 
-    // PLACEHOLDER
-    private void drawPlaceholder(GraphicsContext gc) {
+    /**
+     * Draw placeholder sprite
+     * if image loading fails.
+     */
+    private void drawPlaceholder(
+            GraphicsContext gc
+    ) {
         gc.setFill(placeholderColor);
         gc.fillRoundRect(x, y, width, height, 20, 20);
         gc.setFill(placeholderColor.darker());
@@ -250,11 +300,17 @@ public abstract class Cookie extends GameObject implements Animatable {
     }
 
     // ANIMATION
+    /**
+     * Advance animation frame.
+     */
     @Override
     public void nextFrame() {
         currentFrame = (currentFrame + 1) % 4;
     }
 
+    /**
+     * Change current animation state.
+     */
     @Override
     public void setAnimation(String name) {
         currentFrame = 0;
@@ -351,6 +407,9 @@ public abstract class Cookie extends GameObject implements Animatable {
     public boolean isGhost() {
         return isGhost;
     }
+    /**
+     * Enable or disable ghost mode.
+     */
     public void setGhost(boolean ghost) {
         this.isGhost = ghost;
     }
@@ -359,6 +418,9 @@ public abstract class Cookie extends GameObject implements Animatable {
     public boolean isInvincible() {
         return invincibilityTimer > 0;
     }
+    /**
+     * Enable temporary invincibility after hit.
+     */
     public void setInvincible(boolean value) {
 
         if (value) {

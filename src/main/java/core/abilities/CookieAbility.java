@@ -4,12 +4,20 @@ import core.entities.base.Cookie;
 import game.GameController;
 
 /**
- * Strategy interface for cookie abilities.
+ * Base interface for all cookie abilities.
+ *
+ * Ability system uses the Strategy Pattern:
+ * each cookie can have different ability behavior
+ * without changing the Cookie class itself.
  */
 public interface CookieAbility {
 
     /**
-     * Update ability each frame.
+     * Update ability every frame.
+     *
+     * @param gc     game controller
+     * @param cookie owner cookie
+     * @param delta  frame delta time
      */
     void update(
             GameController gc,
@@ -18,29 +26,33 @@ public interface CookieAbility {
     );
 
     /**
-     * Activate ability.
+     * Activate ability manually.
+     * Used by active skills only.
      */
     void activate();
 
     /**
-     * Is ability currently active?
+     * Check if ability is active.
      */
     boolean isActive();
 
     /**
-     * Remaining cooldown.
+     * Get remaining cooldown time.
      */
     double getCooldownRemaining();
 
     /**
-     * Cooldown percent.
+     * Get cooldown progress.
      * 1.0 = ready
      * 0.0 = just used
      */
     double getCooldownPercent();
 
     /**
-     * Is this a passive ability?
+     * Check if ability is passive.
+     * Passive abilities:
+     * - always active
+     * - no key press needed
      */
     boolean isPassive();
 }

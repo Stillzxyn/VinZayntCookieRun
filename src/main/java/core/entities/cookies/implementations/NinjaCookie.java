@@ -1,7 +1,7 @@
 package core.entities.cookies.implementations;
 
 import core.entities.base.Cookie;
-import core.abilities.implementations.SpeedBoostAbility;
+import core.abilities.implementations.JumpBoostAbility;
 import javafx.scene.paint.Color;
 
 public class NinjaCookie extends Cookie {
@@ -18,6 +18,6 @@ public class NinjaCookie extends Cookie {
         setHp(115);
 
         // Grant speed boost ability - jumps 20% faster
-        this.ability = new SpeedBoostAbility();
+        this.ability = new JumpBoostAbility();
     }
 }
