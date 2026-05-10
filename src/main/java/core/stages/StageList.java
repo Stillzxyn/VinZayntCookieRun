@@ -30,13 +30,7 @@ public class StageList {
         if (index >= 0 && index < ALL.size()) {
             return ALL.get(index);
         }
-        return ALL.get(0); // Default to World 1
+        return ALL.getFirst(); // Default to World 1
     }
 
-    /**
-     * Get all stages.
-     */
-    public static List<Stage> getAllStages() {
-        return new ArrayList<>(ALL);
-    }
 }

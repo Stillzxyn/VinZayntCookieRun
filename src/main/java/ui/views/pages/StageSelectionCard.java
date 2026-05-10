@@ -17,13 +17,11 @@ import javafx.scene.paint.Color;
 public class StageSelectionCard extends BaseCard {
 
     private final Stage stage;
-    private final int index;
     private StackPane logoPane;
 
     public StageSelectionCard(Stage stage, int index) {
         super(240, 150);
         this.stage = stage;
-        this.index = index;
         buildCard();
     }
 
@@ -121,19 +119,6 @@ public class StageSelectionCard extends BaseCard {
 
         return logoPane;
     }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public Stage getStage() {
-        return stage;
-    }
-
-    public StackPane getLogoPane() {
-        return logoPane;
-    }
-
     /**
      * Get color for difficulty level (green to red gradient).
      */

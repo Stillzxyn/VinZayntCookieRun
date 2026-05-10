@@ -4,74 +4,153 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
+import utils.Renderable;
+import utils.Updatable;
+
 /**
- * Handles seamless scrolling/tiling of an image on canvas.
- * Manages offset, scaling, and rendering.
+ * Handles seamless scrolling background rendering.
  */
-public class ScrollingLayer {
+public class ScrollingLayer implements Renderable, Updatable {
 
     private Image image;
-    private double offset = 0;
-    private double speed;
-    private double yPos;
-    private double height;
-    private double canvasWidth;
 
-    public ScrollingLayer(double canvasWidth, double yPos, double height, double speed) {
+    private double offset = 0;
+
+    private final double speed;
+    private final double yPos;
+    private final double height;
+    private final double canvasWidth;
+
+    public ScrollingLayer(
+            double canvasWidth,
+            double yPos,
+            double height,
+            double speed
+    ) {
+
         this.canvasWidth = canvasWidth;
         this.yPos = yPos;
         this.height = height;
         this.speed = speed;
     }
 
-    public void setImage(Image img) {
-        this.image = img;
+    /**
+     * Sets the image to be scrolled.
+     * @param image the background image.
+     */
+    public void setImage(Image image) {
+
+        this.image = image;
     }
 
-    public void update(double delta, double extraSpeed) {
-        if (image == null) return;
-
-        offset += delta * (speed + extraSpeed);
-
-        // Wrap offset at image width
-        if (offset >= image.getWidth()) {
-            offset -= image.getWidth();
-        }
+    /**
+     * Update scrolling offset based on default speed.
+     * @param delta time elapsed since last frame.
+     */
+    @Override
+    public void update(
+            double delta
+    ) {
+        update(delta, 0);
     }
 
-    public void render(GraphicsContext gc, Color fallbackColor) {
-        if (image == null || image.isError()) {
-            if (fallbackColor != null) {
-                gc.setFill(fallbackColor);
-                gc.fillRect(0, yPos, canvasWidth, height);
-            }
+    /**
+     * Update scrolling offset with additional speed factor.
+     * @param delta time elapsed since last frame.
+     * @param extraSpeed additional speed to add to the base speed.
+     */
+    public void update(
+            double delta,
+            double extraSpeed
+    ) {
+
+        if (!isLoaded()) {
             return;
         }
 
-        // Calculate scale ratio based on available height
-        double scaleRatio = height / image.getHeight();
-        double scaledWidth = image.getWidth() * scaleRatio;
+        double scaledWidth =
+                image.getWidth()
+                        * (height / image.getHeight());
 
-        // Draw first copy
-        gc.drawImage(image, -offset, yPos, scaledWidth, height);
+        offset += delta * (speed + extraSpeed);
 
-        // Draw second copy for seamless looping
-        gc.drawImage(image, scaledWidth - offset, yPos, scaledWidth, height);
+        // Seamless loop
+        if (offset >= scaledWidth) {
+            offset -= scaledWidth;
+        }
     }
 
-    public double getOffset() {
-        return offset;
+    /**
+     * Render scrolling background with default fallback color.
+     */
+    @Override
+    public void render(GraphicsContext gc) {
+        render(gc, Color.web("#FFB6FF"));
     }
 
-    public void setOffset(double offset) {
-        this.offset = offset;
+    /**
+     * Render scrolling background.
+     * @param gc the graphics context to draw on.
+     * @param fallbackColor color to show if image is not loaded.
+     */
+    public void render(
+            GraphicsContext gc,
+            Color fallbackColor
+    ) {
+
+        if (!isLoaded()) {
+
+            if (fallbackColor != null) {
+
+                gc.setFill(fallbackColor);
+
+                gc.fillRect(
+                        0,
+                        yPos,
+                        canvasWidth,
+                        height
+                );
+            }
+
+            return;
+        }
+
+        double scaleRatio =
+                height / image.getHeight();
+
+        double scaledWidth =
+                image.getWidth() * scaleRatio;
+
+        // First image
+        gc.drawImage(
+                image,
+                -offset,
+                yPos,
+                scaledWidth,
+                height
+        );
+
+        // Second image
+        gc.drawImage(
+                image,
+                scaledWidth - offset,
+                yPos,
+                scaledWidth,
+                height
+        );
     }
 
+    /**
+     * @return true if the image is successfully loaded and ready for rendering.
+     */
+    public boolean isLoaded() {
+
+        return image != null
+                && !image.isError();
+    }
+
+    // GETTERS / SETTERS
     public Image getImage() {
         return image;
-    }
-
-    public boolean isLoaded() {
-        return image != null && !image.isError();
     }
 }

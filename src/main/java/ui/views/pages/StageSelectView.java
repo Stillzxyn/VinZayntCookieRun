@@ -23,7 +23,6 @@ import javafx.scene.text.Text;
  */
 public class StageSelectView extends StackPane {
 
-    private final CookieRunApp app;
     private final StagesRowPane stagesRowPane;
     private final BaseBackgroundPane backgroundPane;
 
@@ -32,7 +31,6 @@ public class StageSelectView extends StackPane {
      * @param app The main application instance for navigation
      */
     public StageSelectView(CookieRunApp app) {
-        this.app = app;
         this.backgroundPane = new BaseBackgroundPane("/CookieSelectionPane/MagicalBg.png", 0.5);
         this.getChildren().add(backgroundPane);
 

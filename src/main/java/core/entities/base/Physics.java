@@ -1,8 +1,15 @@
 package core.entities.base;
 
 /**
- * Handles all physics calculations for a game object.
- * Manages position, velocity, gravity, and ground collision.
+ * Physics system for game objects.
+ *
+ * Responsibilities:
+ * - Gravity
+ * - Jump physics
+ * - Ground collision
+ * - Position updates
+ *
+ * Used mainly by Cookie.
  */
 public class Physics {
 
@@ -10,11 +17,16 @@ public class Physics {
     // PHYSICS CONSTANTS
     // =========================
 
-    public static final double GRAVITY       = 1800.0;
+    // Physics constants
+    public static final double GRAVITY = 1800.0;
     public static final double JUMP_VELOCITY = -680.0;
-    public static final double GROUND_Y      = 290.0;
-    public static final double NORMAL_H      = 70.0;
-    public static final double SLIDE_H       = 40.0;
+
+    // Ground position
+    public static final double GROUND_Y = 290.0;
+
+    // Player hitbox sizes
+    public static final double NORMAL_H = 70.0;
+    public static final double SLIDE_H = 40.0;
 
     // =========================
     // STATE
@@ -36,13 +48,15 @@ public class Physics {
     // =========================
 
     /**
-     * Initialize physics with starting position and dimensions.
-     * @param x Starting x position
-     * @param y Starting y position
-     * @param width Object width
-     * @param height Object height
+     * Create physics object with
+     * initial position and size.
      */
-    public Physics(double x, double y, double width, double height) {
+    public Physics(
+            double x,
+            double y,
+            double width,
+            double height
+    ) {
         this.x = x;
         this.y = y;
         this.startX = x;
@@ -57,8 +71,12 @@ public class Physics {
     // =========================
 
     /**
-     * Update physics for the given frame.
-     * @param delta Time since last frame (in seconds)
+     * Main physics update loop.
+     *
+     * Handles:
+     * - Gravity
+     * - Vertical movement
+     * - Ground collision
      */
     public void update(double delta) {
         // Apply physics if in air OR if jumping (velocityY != 0)
@@ -84,11 +102,6 @@ public class Physics {
         }
     }
 
-    public void resetToGround() {
-        y = GROUND_Y - NORMAL_H;
-        velocityY = 0;
-    }
-
     // =========================
     // STATE CHECKS
     // =========================
@@ -105,22 +118,12 @@ public class Physics {
     // POSITION SETTERS
     // =========================
 
-    public void setPosition(double x, double y) {
-        this.x = x;
-        this.y = y;
-    }
-
     public void setX(double x) {
         this.x = x;
     }
 
     public void setY(double y) {
         this.y = y;
-    }
-
-    public void setDimensions(double width, double height) {
-        this.width = width;
-        this.height = height;
     }
 
     public void setHeight(double height) {
@@ -155,12 +158,13 @@ public class Physics {
     // =========================
 
     /**
-     * Reset physics to starting position and clear velocity.
-     * Used when playing again after game over.
+     * Reset physics to initial state.
+     *
+     * Used when starting a new game.
      */
     public void resetToStart() {
-        x = startX;
-        y = startY;
-        velocityY = 0;
+        this.x = startX;
+        this.y = startY;
+        this.velocityY = 0;
     }
 }

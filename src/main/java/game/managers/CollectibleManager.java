@@ -1,12 +1,13 @@
 package game.managers;
 
 import core.entities.base.Cookie;
+import core.entities.base.GameObject;
 import core.entities.base.Physics;
 
 import core.entities.collectibles.Collectible;
 import core.entities.collectibles.Coin;
-import core.entities.collectibles.JellySmall;
 import core.entities.collectibles.JellyBig;
+import core.entities.collectibles.JellySmall;
 
 import graphics.effects.Particle;
 
@@ -18,11 +19,17 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Manages collectible spawning,
- * collisions,
- * and particle effects.
+ * Handles:
+ * - Collectible spawning
+ * - Collectible collision
+ * - Score / coin gain
+ * - Collection particles
  */
 public class CollectibleManager {
+
+    // =========================
+    // STATE
+    // =========================
 
     private final List<Collectible> collectibles =
             new ArrayList<>();
@@ -30,87 +37,138 @@ public class CollectibleManager {
     private final List<Particle> particles =
             new ArrayList<>();
 
+    private final Random rng =
+            new Random();
+
     private double collectibleTimer = 0;
 
     private double nextCollectibleIn = 0.9;
 
-    private final Random rng = new Random();
+    // =========================
+    // UPDATE
+    // =========================
 
+    /**
+     * Update collectibles and particles.
+     * @param delta time elapsed since last frame.
+     * @param currentSpeed current game speed for spawning movement.
+     * @param gameObjects list of all game objects to add new spawns to.
+     */
     public void update(
             double delta,
             double currentSpeed,
-            List gameObjects
+            List<GameObject> gameObjects
     ) {
 
         spawnCollectibles(
+                delta,
                 currentSpeed,
                 gameObjects
         );
 
-        // Update particles
+        updateParticles(delta);
+    }
+
+    /**
+     * Update particle effects.
+     */
+    private void updateParticles(
+            double delta
+    ) {
+
         for (int i = particles.size() - 1;
              i >= 0;
              i--) {
 
-            Particle p = particles.get(i);
+            Particle particle =
+                    particles.get(i);
 
-            p.update(delta);
+            particle.update(delta);
 
-            if (p.isDead()) {
+            if (particle.isDead()) {
 
                 particles.remove(i);
             }
         }
     }
 
+    // =========================
+    // COLLISION
+    // =========================
+
+    /**
+     * Handle collectible pickup and update score/coins.
+     * @param cookie the player cookie.
+     * @param scoreCoins array [score, coins] to be updated.
+     */
     public void checkCollision(
             Cookie cookie,
             int[] scoreCoins
     ) {
 
-        Iterator<Collectible> cIt =
+        Iterator<Collectible> iterator =
                 collectibles.iterator();
 
-        while (cIt.hasNext()) {
+        while (iterator.hasNext()) {
 
-            Collectible c = cIt.next();
+            Collectible collectible =
+                    iterator.next();
 
-            if (cookie.intersects(c)) {
-
-                // Score
-                scoreCoins[0] +=
-                        c.getScoreValue();
-
-                // Coin count
-                if (c instanceof Coin) {
-
-                    scoreCoins[1]++;
-                }
-
-                // Spawn particles
-                for (int i = 0; i < 5; i++){
-
-                    particles.add(
-                            new Particle(
-                                    c.getX(),
-                                    c.getY()
-                            )
-                    );
-                }
-
-                c.destroy();
-
-                cIt.remove();
+            if (!cookie.intersects(collectible)) {
+                continue;
             }
+
+            // Add score
+            scoreCoins[0] +=
+                    collectible.getScoreValue();
+
+            // Add coin count
+            if (collectible instanceof Coin) {
+
+                scoreCoins[1]++;
+            }
+
+            spawnParticles(
+                    collectible.getX(),
+                    collectible.getY()
+            );
+
+            collectible.destroy();
+
+            iterator.remove();
         }
     }
 
-    private void spawnCollectibles(
-            double currentSpeed,
-            List gameObjects
+    /**
+     * Spawn collection particles.
+     */
+    private void spawnParticles(
+            double x,
+            double y
     ) {
 
-        collectibleTimer += 0.016;
+        for (int i = 0; i < 5; i++) {
+
+            particles.add(
+                    new Particle(x, y)
+            );
+        }
+    }
+
+    // =========================
+    // SPAWNING
+    // =========================
+
+    /**
+     * Spawn collectibles periodically.
+     */
+    private void spawnCollectibles(
+            double delta,
+            double currentSpeed,
+            List<GameObject> gameObjects
+    ) {
+
+        collectibleTimer += delta;
 
         if (collectibleTimer
                 < nextCollectibleIn) {
@@ -126,76 +184,107 @@ public class CollectibleManager {
 
         int roll = rng.nextInt(10);
 
-        // Coins
+        // Spawn coins
         if (roll < 6) {
 
-            int count =
-                    3 + rng.nextInt(4);
-
-            double coinY =
-                    rng.nextBoolean()
-                            ? Physics.GROUND_Y - 80
-                            : Physics.GROUND_Y - 42;
-
-            for (int i = 0; i < count; i++) {
-
-                Collectible c =
-                        new Coin(
-                                800.0 + 10 + i * 32,
-                                coinY,
-                                currentSpeed
-                        );
-
-                collectibles.add(c);
-
-                gameObjects.add(c);
-            }
+            spawnCoinLine(
+                    currentSpeed,
+                    gameObjects
+            );
         }
 
-        // Jelly
+        // Spawn jelly
         else {
 
-            Collectible c =
-                    roll < 9
-                            ? new JellySmall(
-                            800.0 + 10,
-                            Physics.GROUND_Y - 65,
-                            currentSpeed
-                    )
-                            : new JellyBig(
-                            800.0 + 10,
-                            Physics.GROUND_Y - 65,
-                            currentSpeed
-                    );
-
-            collectibles.add(c);
-
-            gameObjects.add(c);
+            spawnJelly(
+                    currentSpeed,
+                    gameObjects,
+                    roll
+            );
         }
     }
 
     /**
-     * Render particles.
+     * Spawn a line of coins.
+     */
+    private void spawnCoinLine(
+            double currentSpeed,
+            List<GameObject> gameObjects
+    ) {
+
+        int count =
+                3 + rng.nextInt(4);
+
+        double coinY =
+                rng.nextBoolean()
+                        ? Physics.GROUND_Y - 80
+                        : Physics.GROUND_Y - 42;
+
+        for (int i = 0; i < count; i++) {
+
+            Collectible coin =
+                    new Coin(
+                            810 + i * 32,
+                            coinY,
+                            currentSpeed
+                    );
+
+            collectibles.add(coin);
+
+            gameObjects.add(coin);
+        }
+    }
+
+    /**
+     * Spawn jelly collectible.
+     */
+    private void spawnJelly(
+            double currentSpeed,
+            List<GameObject> gameObjects,
+            int roll
+    ) {
+
+        Collectible jelly =
+                roll < 9
+                        ? new JellySmall(
+                        810,
+                        Physics.GROUND_Y - 65,
+                        currentSpeed
+                )
+                        : new JellyBig(
+                        810,
+                        Physics.GROUND_Y - 65,
+                        currentSpeed
+                );
+
+        collectibles.add(jelly);
+
+        gameObjects.add(jelly);
+    }
+
+    // =========================
+    // RENDER
+    // =========================
+
+    /**
+     * Render particle effects.
      */
     public void renderParticles(
             GraphicsContext gc
     ) {
 
-        for (Particle p : particles) {
+        for (Particle particle : particles) {
 
-            p.render(gc);
+            particle.render(gc);
         }
     }
+
+    // =========================
+    // GETTERS
+    // =========================
 
     public List<Collectible> getCollectibles() {
 
         return collectibles;
-    }
-
-    public void clear() {
-
-        collectibles.clear();
-
-        particles.clear();
     }
 }

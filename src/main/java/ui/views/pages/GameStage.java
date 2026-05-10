@@ -3,7 +3,6 @@ package ui.views.pages;
 import application.CookieRunApp;
 
 import core.abilities.CookieAbility;
-
 import core.stages.StageList;
 
 import game.GameController;
@@ -12,6 +11,12 @@ import graphics.rendering.ScrollingLayer;
 
 import ui.views.overlays.GameOverPane;
 import ui.views.util.FontLoader;
+
+import utils.Renderable;
+import utils.Updatable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javafx.animation.AnimationTimer;
 
@@ -35,7 +40,15 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
+/**
+ * Main gameplay scene.
+ * Handles rendering, input, HUD, and overlays.
+ */
 public class GameStage extends StackPane {
+
+    // =========================
+    // CONSTANTS
+    // =========================
 
     private static final double W =
             CookieRunApp.WIDTH;
@@ -43,8 +56,13 @@ public class GameStage extends StackPane {
     private static final double H =
             CookieRunApp.HEIGHT;
 
-    private static final double GY =
-            GameController.GROUND_Y;
+    private static final double ABILITY_SIZE = 90;
+
+    private static final double ABILITY_MARGIN = 120;
+
+    // =========================
+    // GAME STATE
+    // =========================
 
     private final CookieRunApp app;
 
@@ -56,9 +74,18 @@ public class GameStage extends StackPane {
 
     private final ScrollingLayer bgLayer;
 
+    private final Button menuButton;
+
     private long lastNano;
 
-    private final Button menuButton;
+    private boolean gameOverShown = false;
+
+    private final List<Updatable> updatables = new ArrayList<>();
+    private final List<Renderable> renderables = new ArrayList<>();
+
+    // =========================
+    // CONSTRUCTOR
+    // =========================
 
     public GameStage(
             CookieRunApp app,
@@ -75,27 +102,50 @@ public class GameStage extends StackPane {
                         app.getSelectedStageIndex()
                 );
 
-        this.ctrl =
-                new GameController(cookie, stage);
+        ctrl = new GameController(cookie, stage);
 
-        this.canvas = new Canvas(W, H);
+        canvas = new Canvas(W, H);
 
-        this.lastNano = 0;
+        bgLayer =
+                new ScrollingLayer(
+                        W,
+                        0,
+                        H,
+                        80
+                );
 
-        // Background layer
-        this.bgLayer =
-                new ScrollingLayer(W, 0, H, 80);
+        updatables.add(ctrl);
+        updatables.add(bgLayer);
 
-        this.getChildren().add(canvas);
+        renderables.add(bgLayer);
+        renderables.add(ctrl);
 
-        this.setFocusTraversable(true);
+        menuButton = createMenuButton();
 
-        // Main Menu Button
-        menuButton = new Button("Main Menu");
+        getChildren().addAll(
+                canvas,
+                menuButton
+        );
 
-        menuButton.setVisible(false);
+        setFocusTraversable(true);
 
-        menuButton.setStyle(
+        loadImages();
+
+        bindInput();
+    }
+
+    // =========================
+    // INITIALIZATION
+    // =========================
+
+    private Button createMenuButton() {
+
+        Button button =
+                new Button("Main Menu");
+
+        button.setVisible(false);
+
+        button.setStyle(
                 "-fx-font-size: 20px;" +
                         "-fx-font-weight: bold;" +
                         "-fx-background-color: linear-gradient(#FFD95A,#F4B400);" +
@@ -104,24 +154,21 @@ public class GameStage extends StackPane {
                         "-fx-border-radius: 18;" +
                         "-fx-border-color: #FFF3B0;" +
                         "-fx-border-width: 2;" +
-                        "-fx-padding: 12 30 12 30;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 10,0,0,4);"
+                        "-fx-padding: 12 30 12 30;"
         );
 
-        menuButton.setOnAction(e -> {
-            app.showHomePage();
-        });
+        button.setOnAction(
+                e -> app.showHomePage()
+        );
 
-        StackPane.setAlignment(menuButton,
-                Pos.CENTER);
+        StackPane.setAlignment(
+                button,
+                Pos.CENTER
+        );
 
-        menuButton.setTranslateY(80);
+        button.setTranslateY(80);
 
-        getChildren().add(menuButton);
-
-        loadImages();
-
-        bindInput();
+        return button;
     }
 
     private void loadImages() {
@@ -148,33 +195,59 @@ public class GameStage extends StackPane {
         } catch (Exception e) {
 
             System.err.println(
-                    "Failed to load background: "
+                    "Background load failed: "
                             + e.getMessage()
             );
         }
     }
 
+    // =========================
+    // INPUT
+    // =========================
+
     private void bindInput() {
 
-        this.requestFocus();
+        requestFocus();
 
-        this.setOnKeyPressed(e -> {
+        setOnKeyPressed(
+                e -> handleKeyPressed(e.getCode())
+        );
 
-            KeyCode k = e.getCode();
+        setOnKeyReleased(
+                e -> handleKeyReleased(e.getCode())
+        );
 
-            if (k == KeyCode.SPACE
-                    || k == KeyCode.UP) {
+        canvas.setOnMouseClicked(e -> {
 
+            if (ctrl.isGameOver()) {
+                return;
+            }
+
+            if (e.getY() < H / 2) {
                 ctrl.onJump();
             }
 
-            else if (k == KeyCode.DOWN
-                    || k == KeyCode.S) {
-
+            else {
                 ctrl.onSlide();
             }
+        });
 
-            else if (k == KeyCode.E) {
+        canvas.setOnMouseReleased(
+                e -> ctrl.onReleaseSlide()
+        );
+    }
+
+    private void handleKeyPressed(KeyCode key) {
+
+        switch (key) {
+
+            case SPACE, UP ->
+                    ctrl.onJump();
+
+            case DOWN, S ->
+                    ctrl.onSlide();
+
+            case E -> {
 
                 CookieAbility ability =
                         ctrl.getCookie().getAbility();
@@ -186,40 +259,23 @@ public class GameStage extends StackPane {
                 }
             }
 
-            else if (k == KeyCode.P) {
-
-                ctrl.togglePause();
-            }
-        });
-
-        this.setOnKeyReleased(e -> {
-
-            if (e.getCode() == KeyCode.DOWN
-                    || e.getCode() == KeyCode.S) {
-
-                ctrl.onReleaseSlide();
-            }
-        });
-
-        canvas.setOnMouseClicked(e -> {
-
-            if (!ctrl.isGameOver()) {
-
-                if (e.getY() < H / 2) {
-
-                    ctrl.onJump();
-                }
-                else {
-
-                    ctrl.onSlide();
-                }
-            }
-        });
-
-        canvas.setOnMouseReleased(
-                e -> ctrl.onReleaseSlide()
-        );
+            case P ->
+                    ctrl.togglePause();
+        }
     }
+
+    private void handleKeyReleased(KeyCode key) {
+
+        if (key == KeyCode.DOWN
+                || key == KeyCode.S) {
+
+            ctrl.onReleaseSlide();
+        }
+    }
+
+    // =========================
+    // GAME LOOP
+    // =========================
 
     public void startGame() {
 
@@ -235,22 +291,21 @@ public class GameStage extends StackPane {
                     return;
                 }
 
-                double delta = Math.min(
-                        (now - lastNano)
-                                / 1_000_000_000.0,
-                        0.05
-                );
+                double delta = (now - lastNano) / 1_000_000_000.0;
+                
+                // Cap delta to avoid huge jumps during lag spikes (e.g., max 0.1s or 10fps)
+                if (delta > 0.1) delta = 0.1;
 
                 lastNano = now;
 
-                ctrl.update(delta);
-
-                bgLayer.update(delta, 0);
+                update(delta);
 
                 render();
 
                 if (ctrl.isGameOver()
-                        && getChildren().size() == 2) {
+                        && !gameOverShown) {
+
+                    gameOverShown = true;
 
                     showGameOver();
 
@@ -260,15 +315,59 @@ public class GameStage extends StackPane {
 
         }.start();
 
-        this.requestFocus();
+        requestFocus();
     }
+
+    private void update(double delta) {
+        for (Updatable u : updatables) {
+            u.update(delta);
+        }
+    }
+
+    // =========================
+    // RENDER
+    // =========================
 
     private void render() {
 
-
         GraphicsContext gc =
                 canvas.getGraphicsContext2D();
-        double shake = ctrl.getCameraShake();
+
+        gc.clearRect(0, 0, W, H);
+
+        applyCameraShake(gc);
+
+        for (Renderable r : renderables) {
+            r.render(gc);
+        }
+
+        drawHUD(gc);
+
+        drawAbilityHUD(gc);
+
+        if (ctrl.isPaused()) {
+
+            drawPauseOverlay(gc);
+
+            menuButton.setVisible(true);
+        }
+
+        else {
+
+            menuButton.setVisible(false);
+        }
+
+        drawRedOverlay(gc);
+
+        gc.restore();
+    }
+
+    private void applyCameraShake(
+            GraphicsContext gc
+    ) {
+
+        double shake =
+                ctrl.getCameraShake();
 
         double offsetX = 0;
         double offsetY = 0;
@@ -287,32 +386,11 @@ public class GameStage extends StackPane {
         gc.save();
 
         gc.translate(offsetX, offsetY);
-
-        bgLayer.render(
-                gc,
-                Color.web("#FFB6FF")
-        );
-
-        ctrl.render(gc);
-
-        drawHUD(gc);
-
-        drawAbilityHUD(gc);
-
-        if (ctrl.isPaused()) {
-
-            drawPauseOverlay(gc);
-
-            menuButton.setVisible(true);
-        }
-        else {
-
-            menuButton.setVisible(false);
-        }
-
-        drawRedOverlay(gc);
-        gc.restore();
     }
+
+    // =========================
+    // HUD
+    // =========================
 
     private void drawHUD(GraphicsContext gc) {
 
@@ -320,77 +398,56 @@ public class GameStage extends StackPane {
                 FontLoader.getCookieRunBold(18)
         );
 
-        // Score shadow
-        gc.setFill(Color.BLACK);
-
-        gc.fillText(
-                "Score: " + ctrl.getScore(),
-                22,
-                32
-        );
-
-        // Score outline
-        gc.setStroke(Color.BLACK);
-
-        gc.setLineWidth(2);
-
-        gc.strokeText(
+        drawOutlinedText(
+                gc,
                 "Score: " + ctrl.getScore(),
                 20,
                 30
         );
 
-        // Score fill
-        gc.setFill(Color.WHITE);
-
-        gc.fillText(
-                "Score: " + ctrl.getScore(),
-                20,
-                30
-        );
-
-        // Coins
         gc.setFont(
                 FontLoader.getCookieRunBold(16)
         );
 
-        gc.setFill(Color.BLACK);
-
-        gc.fillText(
+        drawOutlinedText(
+                gc,
                 "Coins: " + ctrl.getCoins(),
-                22,
-                57
+                20,
+                55
         );
+
+        drawHPBar(gc);
+    }
+
+    private void drawOutlinedText(
+            GraphicsContext gc,
+            String text,
+            double x,
+            double y
+    ) {
 
         gc.setStroke(Color.BLACK);
 
         gc.setLineWidth(2);
 
-        gc.strokeText(
-                "Coins: " + ctrl.getCoins(),
-                20,
-                55
-        );
+        gc.strokeText(text, x, y);
 
         gc.setFill(Color.WHITE);
 
-        gc.fillText(
-                "Coins: " + ctrl.getCoins(),
-                20,
-                55
-        );
+        gc.fillText(text, x, y);
+    }
 
-        // HP Bar
-        double hp = ctrl.getCookie().getHp();
+    private void drawHPBar(
+            GraphicsContext gc
+    ) {
+
+        double hp =
+                ctrl.getCookie().getHp();
 
         double maxHp =
                 ctrl.getCookie().getMaxHpValue();
 
-        double x = 20;
-        double y = 70;
-
         double barWidth = 150;
-        double barHeight = 20;
 
         double hpWidth =
                 (hp / maxHp) * barWidth;
@@ -405,10 +462,10 @@ public class GameStage extends StackPane {
         gc.setFill(hpColor);
 
         gc.fillRoundRect(
-                x,
-                y,
+                20,
+                70,
                 hpWidth,
-                barHeight,
+                20,
                 10,
                 10
         );
@@ -416,10 +473,10 @@ public class GameStage extends StackPane {
         gc.setStroke(Color.WHITE);
 
         gc.strokeRoundRect(
-                x,
-                y,
+                20,
+                70,
                 barWidth,
-                barHeight,
+                20,
                 10,
                 10
         );
@@ -438,48 +495,72 @@ public class GameStage extends StackPane {
                 "HP " + (int) hp
                         + " / "
                         + (int) maxHp,
-                x + 70,
-                y + 14
+                90,
+                84
         );
     }
 
-    private void drawAbilityHUD(GraphicsContext gc) {
+    private void drawAbilityHUD(
+            GraphicsContext gc
+    ) {
+
         CookieAbility ability =
                 ctrl.getCookie().getAbility();
-        if (ability == null) return;
-        if (ability.isPassive()) {
+
+        if (ability == null
+                || ability.isPassive()) {
+
             return;
         }
 
-        double x = W - 120;
-        double y = H - 120;
+        double x =
+                W - ABILITY_MARGIN;
 
-        double size = 90;
+        double y =
+                H - ABILITY_MARGIN;
 
-        // Outer glow
-        gc.setFill(Color.rgb(255, 215, 0, 0.25));
-        gc.fillOval(x - 6, y - 6, size + 12, size + 12);
+        double size =
+                ABILITY_SIZE;
 
-        // Outer circle
-        gc.setFill(Color.rgb(20,20,20,0.88));
+        gc.setFill(
+                Color.rgb(
+                        255,
+                        215,
+                        0,
+                        0.25
+                )
+        );
+
+        gc.fillOval(
+                x - 6,
+                y - 6,
+                size + 12,
+                size + 12
+        );
+
+        gc.setFill(
+                Color.rgb(20,20,20,0.88)
+        );
+
         gc.fillOval(x, y, size, size);
 
-        // Inner circle
         gc.setFill(Color.web("#2C3E50"));
-        gc.fillOval(x + 6, y + 6,
-                size - 12,
-                size - 12);
 
-        // Cooldown overlay
+        gc.fillOval(
+                x + 6,
+                y + 6,
+                size - 12,
+                size - 12
+        );
+
         if (ability.getCooldownRemaining() > 0) {
 
             double percent =
                     ability.getCooldownPercent();
 
-            double overlayHeight =
-                    size * (1 - percent);
-
-            gc.setFill(Color.rgb(0,0,0,0.68));
+            gc.setFill(
+                    Color.rgb(0,0,0,0.68)
+            );
 
             gc.fillArc(
                     x,
@@ -493,13 +574,17 @@ public class GameStage extends StackPane {
 
             gc.setFill(Color.WHITE);
 
-            gc.setFont(Font.font(
-                    "Arial",
-                    FontWeight.EXTRA_BOLD,
-                    20
-            ));
+            gc.setFont(
+                    Font.font(
+                            "Arial",
+                            FontWeight.EXTRA_BOLD,
+                            20
+                    )
+            );
 
-            gc.setTextAlign(TextAlignment.CENTER);
+            gc.setTextAlign(
+                    TextAlignment.CENTER
+            );
 
             gc.fillText(
                     String.format(
@@ -512,18 +597,22 @@ public class GameStage extends StackPane {
                     y + size / 2 + 8
             );
         }
+
         else {
 
-            // READY glow
             gc.setFill(Color.LIME);
 
-            gc.setFont(Font.font(
-                    "Arial",
-                    FontWeight.EXTRA_BOLD,
-                    16
-            ));
+            gc.setFont(
+                    Font.font(
+                            "Arial",
+                            FontWeight.BOLD,
+                            16
+                    )
+            );
 
-            gc.setTextAlign(TextAlignment.CENTER);
+            gc.setTextAlign(
+                    TextAlignment.CENTER
+            );
 
             gc.fillText(
                     "READY",
@@ -532,11 +621,12 @@ public class GameStage extends StackPane {
             );
         }
 
-        // Keybind bubble
-        gc.setFill(Color.rgb(0,0,0,0.8));
+        gc.setFill(
+                Color.rgb(0,0,0,0.8)
+        );
 
         gc.fillOval(
-                x + size/2 - 14,
+                x + size / 2 - 14,
                 y + size + 5,
                 28,
                 28
@@ -544,104 +634,68 @@ public class GameStage extends StackPane {
 
         gc.setFill(Color.WHITE);
 
-        gc.setFont(Font.font(
-                "Arial",
-                FontWeight.BOLD,
-                16
-        ));
-
         gc.fillText(
                 "E",
                 x + size / 2,
                 y + size + 24
         );
 
-        gc.setTextAlign(TextAlignment.LEFT);
+        gc.setTextAlign(
+                TextAlignment.LEFT
+        );
     }
 
-    private void drawPauseOverlay(GraphicsContext gc) {
+    // =========================
+    // OVERLAYS
+    // =========================
 
-        gc.setFill(Color.rgb(0,0,0,0.58));
+    private void drawPauseOverlay(
+            GraphicsContext gc
+    ) {
+
+        gc.setFill(
+                Color.rgb(0,0,0,0.58)
+        );
+
         gc.fillRect(0,0,W,H);
 
-        double panelW = 420;
-        double panelH = 260;
-
-        double px = W/2 - panelW/2;
-        double py = H/2 - panelH/2;
-
-        // Shadow
-        gc.setFill(Color.rgb(0,0,0,0.4));
-        gc.fillRoundRect(
-                px + 6,
-                py + 6,
-                panelW,
-                panelH,
-                35,
-                35
+        gc.setTextAlign(
+                TextAlignment.CENTER
         );
 
-        // Main panel
-        gc.setFill(Color.rgb(40,25,15,0.92));
-        gc.fillRoundRect(
-                px,
-                py,
-                panelW,
-                panelH,
-                35,
-                35
+        gc.setFont(
+                FontLoader.getCookieRunBold(58)
         );
 
-        // Gold border
-        gc.setStroke(Color.web("#FFD95A"));
-        gc.setLineWidth(4);
-
-        gc.strokeRoundRect(
-                px,
-                py,
-                panelW,
-                panelH,
-                35,
-                35
+        gc.setFill(
+                Color.web("#FFD700")
         );
-
-        gc.setTextAlign(TextAlignment.CENTER);
-
-        // Title
-        gc.setFont(FontLoader.getCookieRunBold(58));
-
-        gc.setFill(Color.BLACK);
 
         gc.fillText(
                 "PAUSED",
-                W/2 + 3,
-                py + 88
+                W / 2,
+                H / 2 - 20
         );
 
-        gc.setFill(Color.web("#FFD700"));
-
-        gc.fillText(
-                "PAUSED",
-                W/2,
-                py + 84
-        );
-
-        // Subtitle
         gc.setFill(Color.WHITE);
 
-        gc.setFont(Font.font(
-                "Arial",
-                FontWeight.SEMI_BOLD,
-                20
-        ));
+        gc.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        20
+                )
+        );
 
         gc.fillText(
                 "Press P to resume",
-                W/2,
-                py + 135
+                W / 2,
+                H / 2 + 30
         );
 
-        gc.setTextAlign(TextAlignment.LEFT);
+        gc.setTextAlign(
+                TextAlignment.LEFT
+        );
     }
 
     private void drawRedOverlay(
@@ -651,45 +705,48 @@ public class GameStage extends StackPane {
         double opacity =
                 ctrl.getRedOverlayOpacity();
 
-        if (opacity > 0) {
-
-            gc.setFill(
-                    Color.web(
-                            "#FF0000",
-                            opacity * 0.3
-                    )
-            );
-
-            gc.fillRect(0, 0, W, H);
+        if (opacity <= 0) {
+            return;
         }
+
+        gc.setFill(
+                Color.web(
+                        "#FF0000",
+                        opacity * 0.3
+                )
+        );
+
+        gc.fillRect(0, 0, W, H);
     }
+
+    // =========================
+    // GAME OVER
+    // =========================
 
     private void showGameOver() {
 
-        GameOverPane gameOverPane =
+        GameOverPane pane =
                 new GameOverPane();
 
-        gameOverPane.setScore(
+        pane.setScore(
                 ctrl.getScore()
         );
 
-        gameOverPane.setCoins(
+        pane.setCoins(
                 ctrl.getCoins()
         );
 
-        gameOverPane.setOnRetry(
+        pane.setOnRetry(
                 () -> app.startGame(cookieIndex)
         );
 
-        gameOverPane.setOnHome(
-                () -> app.showHomePage()
+        pane.setOnHome(
+                app::showHomePage
         );
 
-        VBox overlay = new VBox();
+        VBox overlay = new VBox(pane);
 
         overlay.setAlignment(Pos.CENTER);
-
-        overlay.getChildren().add(gameOverPane);
 
         getChildren().add(overlay);
     }

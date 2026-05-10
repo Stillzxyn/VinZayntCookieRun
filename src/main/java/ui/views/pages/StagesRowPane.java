@@ -15,9 +15,8 @@ import java.util.List;
 public class StagesRowPane extends HBox {
 
     private final List<StageSelectionCard> cards;
-    private int selectedIndex;
     private Runnable onStageSelected;
-
+    private int selectedIndex;
     /**
      * Create a stage row pane with all stages visible.
      * @param initialSelectedIndex The index of the stage to select initially (0-4 for Worlds 1-5)
@@ -74,27 +73,4 @@ public class StagesRowPane extends HBox {
         return selectedIndex;
     }
 
-    /**
-     * Set the selected stage index.
-     */
-    public void setSelectedIndex(int index) {
-        if (index >= 0 && index < cards.size()) {
-            selectedIndex = index;
-            refreshStages();
-        }
-    }
-
-    /**
-     * Set callback for when a stage is selected.
-     */
-    public void setOnStageSelected(Runnable callback) {
-        this.onStageSelected = callback;
-    }
-
-    /**
-     * Get all stage cards.
-     */
-    public List<StageSelectionCard> getCards() {
-        return cards;
-    }
 }

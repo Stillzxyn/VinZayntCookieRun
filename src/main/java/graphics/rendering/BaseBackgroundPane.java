@@ -88,18 +88,4 @@ public class BaseBackgroundPane extends StackPane {
         // Draw second copy for seamless looping
         gc.drawImage(backgroundImage, scaledWidth - offsetX, 0, scaledWidth, scaledHeight);
     }
-
-    /**
-     * Set the scroll velocity.
-     */
-    public void setVelocity(double velocity) {
-        this.velocity = velocity;
-    }
-
-    /**
-     * Get the current velocity.
-     */
-    public double getVelocity() {
-        return velocity;
-    }
 }

@@ -153,11 +153,6 @@ public class CookieRunApp extends Application {
         selectedStageIndex = index;
     }
 
-    public Stage getPrimaryStage() {
-
-        return primaryStage;
-    }
-
     /**
      * Program entry point.
      */

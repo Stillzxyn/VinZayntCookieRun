@@ -10,15 +10,28 @@ import core.abilities.implementations.MagneticAbility;
 import game.managers.ObstacleManager;
 import game.managers.CollectibleManager;
 import game.managers.HealthManager;
+import utils.Renderable;
+import utils.Updatable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Refactored GameController using manager pattern.
- * Much cleaner and shorter!
+ * Main game controller.
+ *
+ * Responsibilities:
+ * - Handle game loop
+ * - Update all game systems
+ * - Manage input
+ * - Handle collisions
+ * - Control score/game state
+ *
+ * Uses manager pattern to separate systems:
+ * - ObstacleManager
+ * - CollectibleManager
+ * - HealthManager
  */
-public class GameController {
+public class GameController implements Renderable, Updatable {
     private double cameraShake = 0;
 
     public static final double GROUND_Y   = Physics.GROUND_Y;
@@ -28,12 +41,31 @@ public class GameController {
     private final core.stages.Stage stage;
     private final double difficultyMultiplier;
 
-    // Managers
-    private final ObstacleManager obstacleManager = new ObstacleManager();
-    private final CollectibleManager collectibleManager = new CollectibleManager();
-    private final HealthManager healthManager = new HealthManager();
+    /**
+     * Manager systems.
+     *
+     * Each manager handles its own logic
+     * to keep GameController cleaner.
+     */
+    private final ObstacleManager obstacleManager =
+            new ObstacleManager();
 
-    private final List<GameObject> gameObjects = new ArrayList<>();
+    private final CollectibleManager collectibleManager =
+            new CollectibleManager();
+
+    private final HealthManager healthManager =
+            new HealthManager();
+
+    /**
+     * All active game objects.
+     *
+     * Includes:
+     * - Obstacles
+     * - Collectibles
+     * - Effects
+     */
+    private final List<GameObject> gameObjects =
+            new ArrayList<>();
 
     private int score = 0;
     private int coins = 0;
@@ -44,17 +76,24 @@ public class GameController {
     private boolean gameOver = false;
     private boolean paused = false;
 
-    // Red overlay for hit feedback
+    /**
+     * Red hit effect timer.
+     *
+     * Used when player gets damaged.
+     */
     private double redOverlayTimer = 0;
     private static final double RED_OVERLAY_TOTAL = 0.7;  // 0.2s in + 0.2s stay + 0.3s out
 
     /**
-     * Create a game controller for the given cookie and stage.
-     * Resets the cookie to starting state for a new game.
-     * @param cookie The cookie to control
-     * @param stage The stage with difficulty multiplier
+     * Create game controller.
+     *
+     * Also resets cookie state
+     * before starting a new game.
      */
-    public GameController(Cookie cookie, core.stages.Stage stage) {
+    public GameController(
+            Cookie cookie,
+            core.stages.Stage stage
+    ) {
         this.cookie = cookie;
         this.stage = stage;
         this.difficultyMultiplier = stage.getDifficultyMultiplier();
@@ -63,43 +102,68 @@ public class GameController {
     }
 
     // INPUT
+    /**
+     * Handles jump input.
+     */
     public void onJump() {
         if (!paused && !gameOver)
             cookie.jump();
     }
+
+    /**
+     * Triggers a camera shake effect.
+     * @param intensity The magnitude of the shake.
+     */
     public void shakeCamera(double intensity) {
 
         cameraShake = intensity;
     }
 
+    /**
+     * Handles slide input.
+     */
     public void onSlide() {
         if (!paused && !gameOver)
             cookie.slideDown();
     }
 
+    /**
+     * Handles releasing slide input.
+     */
     public void onReleaseSlide() {
         cookie.releaseSlide();
     }
 
+    /**
+     * Handles special ability activation input.
+     */
     public void onAbility() {
         if (!paused && !gameOver && cookie.getAbility() != null) {
-            // Activate the ability
-            if (cookie.getAbility() instanceof core.abilities.implementations.GhostAbility) {
-                core.abilities.implementations.GhostAbility ghost =
-                    (core.abilities.implementations.GhostAbility) cookie.getAbility();
-                ghost.activate();
-            }
+            cookie.getAbility().activate();
         }
     }
 
+    /**
+     * Toggles the pause state.
+     */
     public void togglePause() {
         if (!gameOver)
             paused = !paused;
     }
 
-    // UPDATE
+    /**
+     * Main game update loop.
+     *
+     * Handles:
+     * - Speed scaling
+     * - Score update
+     * - Cookie update
+     * - Manager updates
+     * - Ability updates
+     * - Collision detection
+     * - Game over logic
+     */
     public void update(double delta) {
-        long frameStartTime = System.nanoTime();
 
         // Update red overlay timer (even when paused)
         if (redOverlayTimer > 0) {
@@ -114,14 +178,9 @@ public class GameController {
 
         score += (int)(delta * currentSpeed * 0.05);
 
-        long cookieUpdateStart = System.nanoTime();
         cookie.update(delta);
-        long cookieUpdateTime = (System.nanoTime() - cookieUpdateStart) / 1_000_000;
-        if (cookieUpdateTime > 3) {
-            System.out.println("[PROFILE] Cookie update: " + cookieUpdateTime + "ms");
-        }
 
-        cookie.decreaseHp(delta * 0.2);
+        cookie.decreaseHp(delta * 0.1);
 
         if(cookie.getHp() <= 0) {
             gameOver = true;
@@ -135,19 +194,26 @@ public class GameController {
         // Update cookie ability
         if (cookie.getAbility() != null) {
             cookie.getAbility().update(this, cookie, delta);
-            // Sync ghost state for GhostAbility
-            if (cookie.getAbility() instanceof core.abilities.implementations.GhostAbility) {
-                core.abilities.implementations.GhostAbility ghost =
-                    (core.abilities.implementations.GhostAbility) cookie.getAbility();
-                cookie.setGhost(ghost.isActive());
-            }
+            cookie.setGhost(cookie.getAbility().isActive() && !cookie.getAbility().isPassive());
         }
 
         // Update game objects
-        gameObjects.removeIf(obj -> {
+        // We update objects and remove them if they are dead.
+        // We use an index-based loop for better performance and to avoid concurrent modification issues,
+        // although removeIf is generally safe and fast enough for modern JVMs.
+        for (int i = gameObjects.size() - 1; i >= 0; i--) {
+            GameObject obj = gameObjects.get(i);
             obj.update(delta);
-            return !obj.isAlive();
-        });
+            if (!obj.isAlive()) {
+                gameObjects.remove(i);
+            }
+        }
+
+        // Clean up manager lists as well
+        // These lists should stay in sync with gameObjects list.
+        obstacleManager.getObstacles().removeIf(obj -> !obj.isAlive());
+        collectibleManager.getCollectibles().removeIf(obj -> !obj.isAlive());
+        healthManager.getHealthItems().removeIf(obj -> !obj.isAlive());
 
         // Check collisions
         boolean[] gameOverFlag = {gameOver};
@@ -167,17 +233,7 @@ public class GameController {
         coins = scoreCoins[1];
 
         healthManager.checkCollision(cookie);
-        CookieAbility ability =
-                cookie.getAbility();
 
-        if (ability != null) {
-
-            ability.update(
-                    this,
-                    cookie,
-                    delta
-            );
-        }
         if (cameraShake > 0) {
 
             cameraShake -= delta * 20;
@@ -197,7 +253,10 @@ public class GameController {
 
         cookie.render(gc);
 
-        // Draw magnetic field indicator
+/**
+ * Draw magnetic aura effect
+ * for MagneticAbility cookies.
+ */
         if (cookie.getAbility()
                 instanceof MagneticAbility) {
 
@@ -233,7 +292,9 @@ public class GameController {
             );
         }
 
-        // IMPORTANT
+        /**
+         * Render collectible particles/effects.
+         */
         collectibleManager.renderParticles(gc);
     }
 
@@ -243,13 +304,10 @@ public class GameController {
     public boolean isGameOver() { return gameOver; }
     public boolean isPaused() { return paused; }
     public Cookie getCookie() { return cookie; }
-    public double getGameTime() { return gameTime; }
-    public String getDifficulty() { return stage.getDifficulty(); }
-    public double getDifficultyMultiplier() { return difficultyMultiplier; }
 
     /**
-     * Get the current red overlay opacity (0.0 to 1.0) based on hit feedback timing.
-     * Smooth fade: 0-0.2s fade in, 0.2-0.4s stay, 0.4-0.7s fade out
+     * Calculate red overlay opacity
+     * for smooth damage feedback.
      */
     public double getRedOverlayOpacity() {
         if (redOverlayTimer <= 0) return 0.0;
@@ -268,12 +326,14 @@ public class GameController {
         }
     }
 
-    // For magnetic ability
-    public List<GameObject> getGameObjects() { return gameObjects; }
-    public List<Collectible> getCollectibles() { return collectibleManager.getCollectibles(); }
-
-    // Ability support
-    public void applyMagneticForceToCollectibles(MagneticAbility ability) {
+    /**
+     * Apply magnetic force to collectibles.
+     *
+     * Used by MagneticAbility.
+     */
+    public void applyMagneticForceToCollectibles(
+            MagneticAbility ability
+    ) {
         for (Collectible c : collectibleManager.getCollectibles()) {
             ability.applyForceToCollectible(c, cookie);
         }

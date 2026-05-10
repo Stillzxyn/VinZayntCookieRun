@@ -120,12 +120,6 @@ public class MagneticAbility implements CookieAbility {
     }
 
     public double getMagneticRadius() {
-
         return magneticRadius;
     }
-
-//    public double getAttractionStrength() {
-//
-//        return attractionStrength;
-//    }
 }

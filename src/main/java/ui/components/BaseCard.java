@@ -20,15 +20,6 @@ public class BaseCard extends VBox {
     protected double hoverScale = 1.1;
 
     /**
-     * Create a base card with default sizing.
-     */
-    public BaseCard() {
-        super(15);
-        this.setAlignment(Pos.CENTER);
-        initializePanes(300, 200);
-    }
-
-    /**
      * Create a base card with custom dimensions.
      * @param width card width
      * @param height card height
@@ -140,14 +131,6 @@ public class BaseCard extends VBox {
         this.selected = selected;
         applyCurrentStyle();
     }
-
-    /**
-     * Get selection state.
-     */
-    public boolean isSelected() {
-        return selected;
-    }
-
     /**
      * Apply normal style.
      */
@@ -172,18 +155,4 @@ public class BaseCard extends VBox {
             applyNormalStyle();
         }
     }
-
-    public void setCustomStyles(String normalStyle, String selectedStyle) {
-        this.normalStyle = normalStyle;
-        this.selectedStyle = selectedStyle;
-        applyCurrentStyle();
-    }
-
-    /**
-     * Set hover scale factor.
-     */
-    public void setHoverScale(double scale) {
-        this.hoverScale = scale;
-    }
-
 }

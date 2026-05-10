@@ -9,7 +9,6 @@ import core.entities.base.Obstacle;
  */
 public abstract class AirObstacle extends Obstacle {
 
-    protected double bobTimer = 0;
     protected double baseY;
 
     public AirObstacle(double x, double y, double width, double height, double speed) {
@@ -20,7 +19,6 @@ public abstract class AirObstacle extends Obstacle {
     /** Bobbing animation for air obstacles */
     @Override
     protected void updateBehavior(double delta) {
-        bobTimer += delta * 3.0;
-        y = baseY + Math.sin(bobTimer) * 8;
+        y = baseY + Math.sin(System.currentTimeMillis() / 333.3) * 8;
     }
 }

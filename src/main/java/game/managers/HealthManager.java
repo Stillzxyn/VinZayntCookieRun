@@ -1,58 +1,128 @@
 package game.managers;
 
 import core.entities.base.Cookie;
+import core.entities.base.GameObject;
 import core.entities.base.Physics;
 import core.entities.items.HealthItem;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 /**
- * Manages health item spawning and collision detection.
+ * Handles:
+ * - Health item spawning
+ * - Healing collision
  */
 public class HealthManager {
 
-    private final List<HealthItem> healthItems = new ArrayList<>();
-    private double healthSpawnTimer = 0;
-    private static final double HEALTH_SPAWN_INTERVAL = 8.0;
+    // =========================
+    // STATE
+    // =========================
 
-    public void update(double delta, List gameObjects) {
-        spawnHealthItems(gameObjects);
+    private final List<HealthItem> healthItems =
+            new ArrayList<>();
+
+    private final Random rng =
+            new Random();
+
+    private double healthSpawnTimer = 0;
+
+    private double nextSpawnTime = 4;
+
+    // =========================
+    // UPDATE
+    // =========================
+
+    /**
+     * Update health system every frame.
+     */
+    public void update(
+            double delta,
+            List<GameObject> gameObjects
+    ) {
+
+        spawnHealthItems(
+                delta,
+                gameObjects
+        );
     }
 
-    public void checkCollision(Cookie cookie) {
-        Iterator<HealthItem> hIt = healthItems.iterator();
+    // =========================
+    // COLLISION
+    // =========================
 
-        while (hIt.hasNext()) {
-            HealthItem h = hIt.next();
+    /**
+     * Heal cookie on pickup.
+     */
+    public void checkCollision(
+            Cookie cookie
+    ) {
 
-            if (h.collides(cookie)) {
-                cookie.heal(25);
-                h.destroy();
-                hIt.remove();
+        Iterator<HealthItem> iterator =
+                healthItems.iterator();
+
+        while (iterator.hasNext()) {
+
+            HealthItem item =
+                    iterator.next();
+
+            if (!item.collides(cookie)) {
+                continue;
             }
+
+            cookie.heal(25);
+
+            item.destroy();
+
+            iterator.remove();
         }
     }
 
-    private void spawnHealthItems(List gameObjects) {
-        healthSpawnTimer += 0.016;  // Approximate delta
+    // =========================
+    // SPAWNING
+    // =========================
 
-        if (healthSpawnTimer < HEALTH_SPAWN_INTERVAL)
+    /**
+     * Spawn health item randomly.
+     */
+    private void spawnHealthItems(
+            double delta,
+            List<GameObject> gameObjects
+    ) {
+
+        healthSpawnTimer += delta;
+
+        if (healthSpawnTimer
+                < nextSpawnTime) {
+
             return;
+        }
 
         healthSpawnTimer = 0;
 
-        HealthItem item = new HealthItem(800.0 + 10, Physics.GROUND_Y - 120);
+        // Random next spawn
+        nextSpawnTime =
+                3 + rng.nextDouble() * 3;
+
+        HealthItem item =
+                new HealthItem(
+                        810,
+                        Physics.GROUND_Y - 120
+                );
 
         healthItems.add(item);
+
         gameObjects.add(item);
     }
 
-    public List<HealthItem> getHealthItems() {
-        return healthItems;
-    }
+    // =========================
+    // GETTERS
+    // =========================
 
-    public void clear() {
-        healthItems.clear();
+    public List<HealthItem> getHealthItems() {
+
+        return healthItems;
     }
 }

@@ -19,7 +19,6 @@ import javafx.scene.text.Text;
  */
 public class CookieSelectView extends StackPane {
 
-    private final CookieRunApp app;
     private final CardsRowPane cardsRowPane;
     private final BaseBackgroundPane backgroundPane;
 
@@ -28,7 +27,6 @@ public class CookieSelectView extends StackPane {
      * @param app The main application instance for navigation
      */
     public CookieSelectView(CookieRunApp app) {
-        this.app = app;
         this.backgroundPane = new BaseBackgroundPane("/CookieSelectionPane/MagicalBg.png", 0.5);
         this.getChildren().add(backgroundPane);
 

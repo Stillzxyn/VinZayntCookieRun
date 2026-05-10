@@ -116,8 +116,7 @@ public abstract class Cookie
     // PLAYER ACTIONS
     /**
      * Player jump action.
-     * If the cookie has JumpBoostAbility,
-     * jump velocity becomes stronger.
+     * If the cookie has JumpBoostAbility, jump velocity is enhanced.
      */
     public void jump() {
         if (state == State.RUNNING && physics.isOnGround()) {
@@ -137,6 +136,7 @@ public abstract class Cookie
 
     /**
      * Start slide state.
+     * Reduces the hitbox height to avoid high obstacles.
      */
     public void slideDown() {
         if (state == State.RUNNING) {
@@ -149,6 +149,7 @@ public abstract class Cookie
 
     /**
      * Return from slide state back to running.
+     * Restores the normal hitbox height.
      */
     public void releaseSlide() {
         if (state == State.SLIDING) {
@@ -264,7 +265,8 @@ public abstract class Cookie
         }
         // Low HP flashing
         if (hp < 30) {
-            gc.setGlobalAlpha(0.7 + 0.3 * Math.sin(frameTimer * 20));
+            double alpha = 0.7 + 0.3 * Math.sin(System.currentTimeMillis() / 50.0);
+            gc.setGlobalAlpha(alpha);
         }
         // Heal glow
         if (healEffectTimer > 0) {

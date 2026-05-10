@@ -5,7 +5,8 @@ package utils;
  */
 public interface Updatable {
     /**
-     * @param delta time elapsed since last frame in seconds
+     * Updates the object's logic/state.
+     * @param delta time elapsed since last frame in seconds.
      */
     void update(double delta);
 }

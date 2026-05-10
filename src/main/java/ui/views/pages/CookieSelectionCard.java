@@ -9,7 +9,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -26,11 +25,6 @@ public class CookieSelectionCard extends BaseCard {
     private final Cookie cookie;
     private final int index;
     private StackPane iconPane;
-    private boolean selected;
-
-    public CookieSelectionCard(Cookie cookie, int index) {
-        this(cookie, index, false);
-    }
 
     public CookieSelectionCard(Cookie cookie, int index, boolean selected) {
         super(240, 200);
@@ -147,10 +141,5 @@ public class CookieSelectionCard extends BaseCard {
 
         return iconPane;
     }
-    public int getIndex() {return index;}
     public Cookie getCookie() {return cookie;}
-    public StackPane getIconPane() {
-        return iconPane;
-    }
-
 }
