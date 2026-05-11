@@ -1,6 +1,6 @@
-package core.entities.obstacles.types.groundobstacles;
+package game.obstacles.types.groundobstacles;
 
-import core.entities.obstacles.GroundObstacle;
+import game.obstacles.GroundObstacle;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 

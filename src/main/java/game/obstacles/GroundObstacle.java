@@ -1,6 +1,6 @@
-package core.entities.obstacles;
+package game.obstacles;
 
-import core.entities.base.Physics;
+import core.Physics;
 import core.entities.base.Obstacle;
 
 /**

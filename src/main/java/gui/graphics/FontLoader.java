@@ -1,4 +1,4 @@
-package gui.views.util;
+package gui.graphics;
 
 import javafx.scene.text.Font;
 

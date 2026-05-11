@@ -1,4 +1,4 @@
-package core.entities.cookies.implementations;
+package game.cookies.implementations;
 
 import core.entities.base.Cookie;
 import javafx.scene.paint.Color;

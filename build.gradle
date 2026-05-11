@@ -1,47 +1,44 @@
 plugins {
+    id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'org.jetbrains.kotlin.jvm'
+    id 'org.openjfx.javafxplugin' version '0.0.13'
 }
 
-group = 'cookierun'
-version = '1.0'
+group = 'com.vinzaynt'
+version = '1.0-SNAPSHOT'
+sourceCompatibility = '17'
 
 repositories {
     mavenCentral()
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_24
-    targetCompatibility = JavaVersion.VERSION_24
-}
+dependencies {
+    // JavaFX
+    javafx {
+        version = '20.0.1'
+        modules = ['javafx.controls', 'javafx.fxml', 'javafx.graphics', 'javafx.media']
+    }
 
-javafx {
-    version = '24.0.2'
-    modules = ['javafx.controls', 'javafx.fxml', 'javafx.graphics', 'javafx.base']
+    // JUnit 5 (Jupiter)
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
 }
 
 application {
     mainClass = 'application.CookieRunApp'
-    applicationDefaultJvmArgs = ['--enable-native-access=javafx.graphics']
-}
-sourceSets {
-    main {
-        java { srcDirs = ['src/main/java'] }
-        resources { srcDirs = ['src/main/resources'] }
-    }
 }
 
-jar {
-    manifest {
-        attributes(
-            'Main-Class': 'application.CookieRunApp'
-        )
-    }
+tasks.named('test') {
+    useJUnitPlatform()
 }
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
-kotlin {
-    jvmToolchain(24)
+
+// Gradle wrapper
+wrapper {
+    gradleVersion = '8.1.1'
 }

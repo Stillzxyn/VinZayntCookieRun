@@ -1,6 +1,6 @@
-package gui.views.overlays;
+package gui.components;
 
-import gui.views.util.FontLoader;
+import gui.graphics.FontLoader;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;

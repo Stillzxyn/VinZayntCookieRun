@@ -1,7 +1,7 @@
-package core.entities.cookies;
+package game.cookies;
 
 import core.entities.base.Cookie;
-import core.entities.cookies.implementations.*;
+import game.cookies.implementations.*;
 
 import java.util.List;
 import java.util.function.Supplier;

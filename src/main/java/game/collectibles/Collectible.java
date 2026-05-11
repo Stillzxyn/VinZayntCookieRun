@@ -1,4 +1,4 @@
-package core.entities.collectibles;
+package game.collectibles;
 
 import core.entities.base.GameObject;
 import javafx.scene.canvas.GraphicsContext;

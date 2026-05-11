@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Run - Code Improvements</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .card.priority-high {
+            border-left-color: #e74c3c;
+        }
+        .card.priority-medium {
+            border-left-color: #f39c12;
+        }
+        .card.priority-low {
+            border-left-color: #27ae60;
+        }
+        .card-number {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .card.priority-high .card-number {
+            background: #e74c3c;
+        }
+        .card.priority-medium .card-number {
+            background: #f39c12;
+        }
+        .card.priority-low .card-number {
+            background: #27ae60;
+        }
+        .card-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .priority-badge.high {
+            background: #fadbd8;
+            color: #c0392b;
+        }
+        .priority-badge.medium {
+            background: #fdebd0;
+            color: #d68910;
+        }
+        .priority-badge.low {
+            background: #d5f4e6;
+            color: #186a3b;
+        }
+        .package-tree {
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            padding: 12px;
+            margin: 12px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        .package-tree code {
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+        .purpose {
+            color: #7f8c8d;
+            font-size: 0.95em;
+            margin: 10px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-left: 3px solid #3498db;
+            border-radius: 3px;
+        }
+        .key-classes {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .key-classes strong {
+            color: #2980b9;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        .comparison-item {
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .before {
+            background: #fadbd8;
+            border-left: 3px solid #e74c3c;
+        }
+        .after {
+            background: #d5f4e6;
+            border-left: 3px solid #27ae60;
+        }
+        .before strong, .after strong {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .priority-section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .priority-section h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .priority-list {
+            list-style: none;
+        }
+        .priority-list li {
+            padding: 10px;
+            margin: 8px 0;
+            background: #ecf0f1;
+            border-radius: 4px;
+            border-left: 4px solid #e74c3c;
+        }
+        .priority-list li:nth-child(2) {
+            border-left-color: #f39c12;
+        }
+        .priority-list li:nth-child(3) {
+            border-left-color: #27ae60;
+        }
+        .flow-diagram {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: center;
+            font-family: monospace;
+            line-height: 2;
+            color: #2c3e50;
+        }
+        .arrow {
+            color: #3498db;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Cookie Run - Code Improvements</h1>
+        <p class="subtitle">Complete Package Structure & Implementation Guide</p>
+
+        <div class="grid">
+            <!-- 1. EVENT SYSTEM -->
+            <div class="card priority-high">
+                <div class="card-title">
+                    <span class="card-number">1</span>EVENT SYSTEM
+                    <span class="priority-badge high">HIGH PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>gamelogic/events/
+├── GameEvent.java
+├── EventBus.java
+├── CoinCollectedEvent.java
+├── ObstacleHitEvent.java
+├── GameOverEvent.java
+├── HealthChangedEvent.java
+└── ComboEvent.java</code></div>
+                <div class="purpose">🎯 Decouples managers from UI updates. Managers post events, listeners react.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Manager updates UI directly</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Manager posts event → UI listens</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> EventBus (singleton), EventListener (interface)</div>
+            </div>
+
+            <!-- 2. CONFIG CLASSES -->
+            <div class="card priority-high">
+                <div class="card-title">
+                    <span class="card-number">2</span>CONFIG CLASSES
+                    <span class="priority-badge high">HIGH PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>game/config/
+├── GameConfig.java
+├── ObstacleConfig.java
+├── CollectibleConfig.java
+├── PhysicsConfig.java
+└── DifficultyConfig.java</code></div>
+                <div class="purpose">🎯 Centralize hardcoded values. Change gameplay without touching code.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Magic numbers in managers</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>All constants in config classes</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> GameConfig (singleton with static final values)</div>
+            </div>
+
+            <!-- 3. ABILITY MANAGER -->
+            <div class="card priority-medium">
+                <div class="card-title">
+                    <span class="card-number">3</span>ABILITY MANAGER
+                    <span class="priority-badge medium">MEDIUM PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>game/managers/
+├── AbilityManager.java
+├── AbilityCooldown.java
+└── AbilityEffect.java</code></div>
+                <div class="purpose">🎯 Handle ability activation, cooldowns, duration effects.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Abilities isolated in Cookie</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Centralized ability management</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> AbilityManager, AbilityCooldown</div>
+            </div>
+
+            <!-- 4. DAMAGE SYSTEM -->
+            <div class="card priority-medium">
+                <div class="card-title">
+                    <span class="card-number">4</span>DAMAGE SYSTEM
+                    <span class="priority-badge medium">MEDIUM PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>game/damage/
+├── DamageCalculator.java
+├── DamageType.java
+├── DamageEvent.java
+└── Armor.java</code></div>
+                <div class="purpose">🎯 Centralized damage calculation. Support damage types, armor, modifiers.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Direct health subtraction</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Calculate → Apply → Event</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> DamageCalculator, DamageType enum</div>
+            </div>
+
+            <!-- 5. SCORING SYSTEM -->
+            <div class="card priority-high">
+                <div class="card-title">
+                    <span class="card-number">5</span>SCORING SYSTEM
+                    <span class="priority-badge high">HIGH PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>gamelogic/scoring/
+├── ScoreCalculator.java
+├── ScoreMultiplier.java
+├── ComboSystem.java
+├── AchievementTracker.java
+└── ScoreEvent.java</code></div>
+                <div class="purpose">🎯 Calculate scores dynamically. Support combos, multipliers, achievements.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Fixed score per item</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Dynamic calculation with combos</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> ScoreCalculator, ComboSystem</div>
+            </div>
+
+            <!-- 6. STATE MACHINE -->
+            <div class="card priority-medium">
+                <div class="card-title">
+                    <span class="card-number">6</span>STATE MACHINE
+                    <span class="priority-badge medium">MEDIUM PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>core/state/
+├── CookieStateManager.java
+├── CookieState.java
+├── StateTransition.java
+└── StateChangeEvent.java</code></div>
+                <div class="purpose">🎯 Proper state transitions. Support entry/exit actions per state.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Simple enum states</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>State machine with transitions</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> CookieStateManager, StateTransition</div>
+            </div>
+
+            <!-- 7. OBJECT POOLING -->
+            <div class="card priority-low">
+                <div class="card-title">
+                    <span class="card-number">7</span>GENERIC OBJECT POOLING
+                    <span class="priority-badge low">LOW PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>core/pooling/
+├── ObjectPool.java (generic)
+├── ObstaclePool.java
+├── CollectiblePool.java
+└── PoolConfig.java</code></div>
+                <div class="purpose">🎯 Reuse objects instead of creating new ones. Better GC performance.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Create/destroy objects constantly</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Reuse from pool</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> ObjectPool&lt;T&gt; (generic), specific pools</div>
+            </div>
+
+            <!-- 8. INPUT MANAGER -->
+            <div class="card priority-medium">
+                <div class="card-title">
+                    <span class="card-number">8</span>INPUT MANAGER
+                    <span class="priority-badge medium">MEDIUM PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>game/input/
+├── InputManager.java
+├── InputHandler.java
+├── KeyBinding.java
+└── InputEvent.java</code></div>
+                <div class="purpose">🎯 Centralize input handling. Support remapping, multiple inputs.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Input logic in GameStage</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Separate InputManager</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> InputManager, InputHandler</div>
+            </div>
+
+            <!-- 9. DIFFICULTY PROGRESSION -->
+            <div class="card priority-high">
+                <div class="card-title">
+                    <span class="card-number">9</span>DIFFICULTY PROGRESSION
+                    <span class="priority-badge high">HIGH PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>gamelogic/progression/
+├── DifficultyManager.java
+├── DifficultyScaler.java
+├── ProgressionSystem.java
+├── WaveSystem.java
+└── MilestoneTracker.java</code></div>
+                <div class="purpose">🎯 Dynamic difficulty scaling. Speed up over time, new obstacles at milestones.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Static difficulty per stage</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Dynamic scaling throughout game</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> DifficultyManager, DifficultyScaler</div>
+            </div>
+
+            <!-- 10. OBSERVER PATTERN -->
+            <div class="card priority-low">
+                <div class="card-title">
+                    <span class="card-number">10</span>OBSERVER PATTERN
+                    <span class="priority-badge low">LOW PRIORITY</span>
+                </div>
+                <div class="package-tree"><code>core/observers/
+├── GameObserver.java
+├── ManagerListener.java
+├── ScoreListener.java
+└── HealthListener.java</code></div>
+                <div class="purpose">🎯 Managers notify listeners of changes. Decouples game logic from UI.</div>
+                <div class="comparison">
+                    <div class="comparison-item before"><strong>❌ Before:</strong>Direct method calls</div>
+                    <div class="comparison-item after"><strong>✅ After:</strong>Observer pattern with listeners</div>
+                </div>
+                <div class="key-classes"><strong>Key Classes:</strong> GameObserver (interface), specific listeners</div>
+            </div>
+        </div>
+
+        <div class="priority-section">
+            <h2>📌 Implementation Priority</h2>
+            <ul class="priority-list">
+                <li><strong>Phase 1 (Start here):</strong> #1 EVENT SYSTEM, #2 CONFIG CLASSES, #5 SCORING SYSTEM, #9 DIFFICULTY PROGRESSION</li>
+                <li><strong>Phase 2 (Next):</strong> #3 ABILITY MANAGER, #4 DAMAGE SYSTEM, #6 STATE MACHINE, #8 INPUT MANAGER</li>
+                <li><strong>Phase 3 (Polish):</strong> #7 OBJECT POOLING, #10 OBSERVER PATTERN</li>
+            </ul>
+        </div>
+
+        <div class="priority-section">
+            <h2>🔄 Data Flow After Implementation</h2>
+            <div class="flow-diagram">
+                User Input<br>
+                <span class="arrow">↓</span><br>
+                InputManager<br>
+                <span class="arrow">↓</span><br>
+                GameController (orchestrates)<br>
+                <span class="arrow">↓</span><br>
+                Managers + Systems (compute)<br>
+                <span class="arrow">↓</span><br>
+                EventBus (publish events)<br>
+                <span class="arrow">↓</span><br>
+                Listeners (UI, Audio, Logic)<br>
+                <span class="arrow">↓</span><br>
+                Render & Update
+            </div>
+        </div>
+
+        <div class="priority-section">
+            <h2>✅ Checklist</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Event System created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Config Classes created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Scoring System created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Difficulty Progression created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Ability Manager created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Damage System created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> State Machine created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Input Manager created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Object Pooling created
+                </div>
+                <div style="padding: 10px; background: #ecf0f1; border-radius: 4px;">
+                    <input type="checkbox"> Observer Pattern created
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

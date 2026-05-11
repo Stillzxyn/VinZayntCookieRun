@@ -1,8 +1,7 @@
-package core.abilities.implementations;
+package core.abilities;
 
-import core.abilities.CookieAbility;
 import core.entities.base.Cookie;
-import core.entities.collectibles.Collectible;
+import game.collectibles.Collectible;
 
 import game.GameController;
 

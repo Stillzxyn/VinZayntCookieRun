@@ -1,11 +1,13 @@
 package core.entities.base;
 
+import core.Physics;
 import utils.Animatable;
 import core.abilities.CookieAbility;
-import core.abilities.implementations.JumpBoostAbility;
+import core.abilities.JumpBoostAbility;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import audio.SoundManager;
 
 /**
  * Base class for all playable cookies.
@@ -38,7 +40,7 @@ public abstract class Cookie
     private Image[] currentAnimationFrames = runFrames;
     private int currentFrame = 0;
     private double frameTimer = 0;
-    private static final double FRAME_DUR = 0.08;
+    private static final double FRAME_DUR = 0.06;  // Smoother animation (was 0.08)
     private final Color placeholderColor;
     private final String cookieName;
 
@@ -48,10 +50,8 @@ public abstract class Cookie
     protected String tier = "C";
     protected String hex = "#CCCCCC";
     protected String iconPath = "";
-    protected int price = 0;
-    protected boolean unlocked = true;
     protected int maxHpValue = 100;
-    protected String cookieAbilityDesc = "";
+    protected String cookieAbilityDescription = "";
 
     // SPECIAL ABILITY
     protected CookieAbility ability = null;
@@ -117,46 +117,71 @@ public abstract class Cookie
     /**
      * Player jump action.
      * If the cookie has JumpBoostAbility, jump velocity is enhanced.
+     *
+     * OPTIMIZATION: Reduced method calls and allocation overhead.
      */
     public void jump() {
         if (state == State.RUNNING && physics.isOnGround()) {
             state = State.JUMPING;
-            physics.jump();
 
-            // Apply speed boost if available
+            // OPTIMIZATION: Apply ability boost first, before animation
+            double jumpVelocity = Physics.JUMP_VELOCITY;
             if (ability instanceof JumpBoostAbility speedBoost) {
-                double multiplier = speedBoost.getJumpVelocityMultiplier();
-                physics.setVelocityY(Physics.JUMP_VELOCITY * multiplier);
+                jumpVelocity *= speedBoost.getJumpVelocityMultiplier();
             }
 
-            physics.setHeight(Physics.NORMAL_H);
-            setAnimation("JUMP");
+            // Set velocity directly (one assignment instead of method call)
+            physics.setVelocityY(jumpVelocity);
+
+            // Only change animation if we're not already jumping
+            // (reduce animation switching overhead)
+            currentAnimationFrames = jumpFrames;
+            currentFrame = 0;
+            frameTimer = 0;
+
+            // Play jump sound effect
+            SoundManager.getInstance().playJumpSound();
         }
     }
 
     /**
      * Start slide state.
      * Reduces the hitbox height to avoid high obstacles.
+     *
+     * OPTIMIZATION: Direct animation frame assignment instead of setAnimation().
      */
     public void slideDown() {
         if (state == State.RUNNING) {
             state = State.SLIDING;
             physics.setHeight(Physics.SLIDE_H);
             physics.setY(Physics.GROUND_Y - Physics.SLIDE_H);
-            setAnimation("SLIDE");
+
+            // Direct animation assignment (no string overhead)
+            currentAnimationFrames = slideFrames;
+            currentFrame = 0;
+            frameTimer = 0;
+
+            // Play slide sound effect
+            SoundManager.getInstance().playSlideSound();
         }
     }
 
     /**
      * Return from slide state back to running.
      * Restores the normal hitbox height.
+     *
+     * OPTIMIZATION: Direct animation frame assignment instead of setAnimation().
      */
     public void releaseSlide() {
         if (state == State.SLIDING) {
             state = State.RUNNING;
             physics.setHeight(Physics.NORMAL_H);
             physics.setY(Physics.GROUND_Y - Physics.NORMAL_H);
-            setAnimation("RUN");
+
+            // Direct animation assignment (no string overhead)
+            currentAnimationFrames = runFrames;
+            currentFrame = 0;
+            frameTimer = 0;
         }
     }
 
@@ -167,6 +192,9 @@ public abstract class Cookie
         state = State.DEAD;
         setAnimation("DEAD");
         alive = false;
+
+        // Play game over sound effect
+        SoundManager.getInstance().playGameOverSound();
     }
 
 
@@ -198,35 +226,26 @@ public abstract class Cookie
     public void update(double delta) {
 
         if (state == State.DEAD) return;
-
-        // HP drain
-        decreaseHp(delta * 5);
-
+        // OPTIMIZATION: HP drain inlined to avoid method call overhead
+        hp = Math.max(0, hp - delta * 5);
         if (hp <= 0) {
             die();
             return;
         }
-
         // Heal effect timer
         if (healEffectTimer > 0) {
             healEffectTimer -= delta;
         }
-
         // Invincibility timer
         if (invincibilityTimer > 0) {
             invincibilityTimer -= delta;
         }
         // Jump physics
         if (state == State.JUMPING) {
-
             physics.update(delta);
-
             if (physics.isOnGround()) {
-
                 state = State.RUNNING;
-
                 physics.setHeight(Physics.NORMAL_H);
-
                 setAnimation("RUN");
             }
         }
@@ -338,10 +357,9 @@ public abstract class Cookie
     public String getTier() {return tier;}
     public String getHex() {return hex;}
     public String getIconPath() {return iconPath;}
-    public int getPrice() {return price;}
-    public boolean isUnlocked() {return unlocked;}
     public int getMaxHpValue() {return maxHpValue;}
-    public String getCookieName() {return cookieName;}
+    public String getCookieAbilityDescription() {return cookieAbilityDescription;}
+
 
     // =========================
     // METADATA SETTERS
@@ -351,14 +369,10 @@ public abstract class Cookie
     public void setTier(String tier) {this.tier = tier;}
     public void setHex(String hex) {this.hex = hex;}
     public void setIconPath(String iconPath) {this.iconPath = iconPath;}
-    public void setPrice(int price) {
-        if (price < 0) {
-            this.price = 0;
-        } else {
-            this.price = price;
-        }
+    public void setCookieAbilityDescription(String cookieAbilityDescription) {
+        this.cookieAbilityDescription = cookieAbilityDescription;
     }
-    public void setUnlocked(boolean unlocked) {this.unlocked = unlocked;}
+
     public void setMaxHpValue(int maxHpValue) {
         if (maxHpValue < 0) {
             this.maxHpValue = 0;

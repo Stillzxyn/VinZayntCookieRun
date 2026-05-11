@@ -1,4 +1,4 @@
-package gui.graphics.rendering;
+package gui.graphics;
 
 import application.CookieRunApp;
 import javafx.animation.AnimationTimer;

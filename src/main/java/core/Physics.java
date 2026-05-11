@@ -1,4 +1,4 @@
-package core.entities.base;
+package core;
 
 /**
  * Physics system for game objects.

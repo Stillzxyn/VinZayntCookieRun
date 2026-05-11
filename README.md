@@ -1,82 +1,237 @@
-# VinZaynt's Cookie Run
+# CP RUN 🍪
 
-A high-performance, object-oriented endless runner game built with JavaFX. This project features a clean architecture, specialized game managers, and a robust entity-component-like system.
+A JavaFX-based 2D endless runner game built with Java. Control your cookie, avoid obstacles, collect items, and survive as long as possible!
 
-## 🎮 Game Overview
-VinZaynt's Cookie Run is a side-scrolling endless runner where players control various "Cookies," each with unique abilities, to collect items, avoid obstacles, and achieve the highest score possible.
+## Overview
 
-### Key Features
-- **Multiple Playable Cookies**: Each with distinct stats and special abilities (e.g., Magnetic Pull, Ghost Mode, Jump Boost).
-- **Dynamic Obstacle System**: Randomized air and ground obstacles with unique behaviors (bobbing, sliding requirements).
-- **Infinite Scrolling Backgrounds**: Seamless parallax layers for immersive environments.
-- **Advanced Game Mechanics**: HP management, difficulty scaling over time, and a particle-based feedback system.
+Cookie Run is a fast-paced endless runner game where you control a cookie character through an infinite level. Jump to avoid obstacles, slide under barriers, and use special abilities to survive. The game features multiple playable cookies with unique abilities, dynamic difficulty scaling, and a scoring system.
 
----
+## Features
 
-## 🏗 Architecture & Design Patterns
-The project follows a modular, layered architecture designed for maintainability and performance.
+- **5 Playable Cookies** - Each with unique abilities and stats
+- **6 Obstacle Types** - 3 ground-based, 3 air-based obstacles
+- **Collectible System** - Coins and jelly items for scoring
+- **Health System** - HP drains over time, health items to recover
+- **Special Abilities** - Cookie-specific powers (Jump Boost, Magnetic Pull, etc.)
+- **Adaptive Performance** - Speed scales with game time
+- **Black Glass UI** - Modern card-based selection interface
+- **Tier System** - Cookies organized by S/A/B/C tiers
 
-### 1. Manager Pattern (`game.managers`)
-Core game systems are decoupled into specialized managers handled by the `GameController`:
-- **`ObstacleManager`**: Handles spawning, collision detection, and damage scaling for obstacles.
-- **`CollectibleManager`**: Manages jelly/coin spawning and collection effects.
-- **`HealthManager`**: Controls health item spawning and player healing logic.
+## Requirements
 
-### 2. Strategy Pattern (`core.abilities`)
-Cookie abilities are implemented using the Strategy pattern via the `CookieAbility` interface. This allows new abilities to be added without modifying the base `Cookie` class.
-- `GhostAbility`: Allows passing through obstacles.
-- `MagneticAbility`: Pulls collectibles toward the player.
-- `JumpBoostAbility`: Enhances jumping height.
+- **Java 17** or higher
+- **JavaFX 20.0.1**
+- **Gradle 8.1.1**
 
-### 3. Polymorphism & Interfaces (`utils`)
-The game engine relies heavily on abstraction to handle diverse game objects uniformly:
-- **`Updatable`**: For objects requiring per-frame logic.
-- **`Renderable`**: For objects that can be drawn on the Canvas.
-- **`Collidable`**: Standardizes collision detection across all entities.
-- **`Spawnable`**: Manages the lifecycle of objects that enter and exit the screen.
+## Setup
 
----
-
-## 📂 Project Structure
-
-- **`application`**: Entry point and main JavaFX application setup.
-- **`core`**:
-    - **`entities`**: Base classes (`GameObject`, `Cookie`, `Obstacle`) and concrete implementations.
-    - **`abilities`**: The ability system and specific implementations.
-    - **`stages`**: Stage-specific data and difficulty configurations.
-- **`game`**: Core engine logic, `GameController`, and managers.
-- **`graphics`**: Rendering engine, parallax layers, and particle effects.
-- **`ui`**: Menu systems, HUD, and game overlays (Game Over, Pause).
-- **`utils`**: Core interfaces defining the engine's behavior.
-
----
-
-## 🚀 Recent Optimizations
-
-- **High-FPS Rendering**: Decoupled visual animations (bobbing, glowing) from the logic loop for smooth 60+ FPS performance.
-- **Memory Management**: Optimized list iterations and object cleanup in managers to prevent memory leaks and frame stutters.
-- **Clean Code**: Refactored to eliminate `instanceof` checks in favor of polymorphic interface calls.
-- **Type Safety**: Fully implemented Java Generics across all manager lists for better compile-time safety.
-
----
-
-## 🛠 Build & Run
-
-### Prerequisites
-- Java 11 or higher
-- Gradle (included wrapper)
-
-### Commands
+### 1. Clone/Download the Project
 ```bash
-# Run the game
-./gradlew run
-
-# Build a JAR
-./gradlew build
+cd FinalCookieRun
 ```
-For detailed build instructions and troubleshooting, see [RUNNABLE.md](RUNNABLE.md).
+
+### 2. Build the Project
+```bash
+gradle clean build
+```
+
+### 3. Download Dependencies
+Gradle will automatically download all required dependencies (JavaFX, JUnit 5, etc.)
+
+## Running the Game
+
+### Start the Game
+```bash
+gradle run
+```
+
+### From IntelliJ IDEA
+- Click the green play button next to `CookieRunApp`
+- Or: Run → Run 'CookieRunApp'
+
+## Running Tests
+
+### Run All Tests
+```bash
+gradle test
+```
+
+### Run Specific Test Class
+```bash
+gradle test --tests CookieManagerTest
+gradle test --tests CookieTest
+gradle test --tests GameControllerTest
+```
+
+### View Test Report
+```bash
+gradle test --info
+```
+
+## Project Structure
+
+```
+src/
+├── main/java/
+│   ├── application/          # Main app entry point
+│   │   └── CookieRunApp.java
+│   ├── core/
+│   │   ├── entities/         # Game objects (cookies, obstacles, collectibles)
+│   │   ├── abilities/        # Cookie special abilities
+│   │   └── stages/           # Game stages/levels
+│   ├── game/
+│   │   ├── GameController.java       # Main game logic
+│   │   └── managers/         # Obstacle, Collectible, Health, Cookie managers
+│   ├── graphics/
+│   │   ├── rendering/        # Background rendering
+│   │   └── effects/          # Particle effects
+│   ├── gui/
+│   │   ├── views/pages/      # Game screens (selection, gameplay)
+│   │   ├── components/       # Reusable UI components
+│   │   └── util/             # UI utilities (font loading)
+│   └── utils/                # Core interfaces and utilities
+│
+├── test/java/                # JUnit tests
+│   ├── game/GameControllerTest.java
+│   └── core/entities/base/CookieTest.java
+│
+└── resources/                # Images, sprites, assets
+    └── CookieSprite/         # Cookie animations
+```
+
+## Game Controls
+
+| Control | Action |
+|---------|--------|
+| **Space** | Jump |
+| **S Key** | Slide Down |
+| **A Key** | Use Ability |
+| **P Key** | Pause |
+
+## Architecture
+
+### Design Patterns Used
+
+1. **Singleton Pattern** - GameController, CookieManager
+2. **Manager Pattern** - ObstacleManager, CollectibleManager, HealthManager
+3. **Strategy Pattern** - Cookie abilities (CookieAbility interface)
+4. **Object Pooling** - ParticlePool for efficient memory usage
+5. **Observer Pattern** - Input buffering system
+
+### Key Classes
+
+- **GameController** - Main game loop, update logic, collision detection
+- **CookieManager** - Cookie loading, selection, tier management
+- **Cookie** - Base cookie class with HP, physics, abilities
+- **GameStage** - JavaFX stage containing game canvas and rendering
+- **ObstacleManager** - Spawns and manages obstacle collisions
+- **CollectibleManager** - Spawns coins/jelly and handles collection
+
+## Performance Optimizations
+
+- **Adaptive Spawn Scaling** - Spawn rates scale with game speed to prevent lag
+- **Batch Object Cleanup** - Single-pass removal of dead objects
+- **Collision Culling** - Skip off-screen object collision checks
+- **Delta-Time Capping** - Max 0.1s per frame to handle lag spikes
+- **Input Buffering** - Reduces input lag during high-speed gameplay
+- **Camera Shake Decay** - Smooth easing for visual effects
+- **Particle Pooling** - Reuse particle objects instead of creating new ones
+
+## Cookies Available
+
+| Cookie | Tier | Ability | HP |
+|--------|------|---------|-----|
+| Hero Cookie | S | Jump Boost | 115 |
+| Blueberry Cookie | S | Magnetic Pull | 110 |
+| Pirate Cookie | A | - | 105 |
+| Brave Gingerbread | B | - | 100 |
+| Zombie Cookie | C | - | 95 |
+
+## Game Stages
+
+- **World 1-5** - Increasing difficulty multipliers
+- **Difficulty Levels** - Easy, Decent, Normal, Hard, CP
+- **Dynamic Speed** - Speed increases with game time
+
+## Testing
+
+### Test Coverage
+
+- **CookieManagerTest** (28 tests) - Cookie loading, selection, querying
+- **CookieTest** (25 tests) - HP system, state management, abilities
+- **GameControllerTest** (24 tests) - Game loop, scoring, input handling
+
+### Run with Coverage
+```bash
+gradle test jacocoTestReport
+```
+
+Report location: `build/reports/jacoco/test/html/index.html`
+
+## Building for Distribution
+
+### Create JAR File
+```bash
+gradle jar
+```
+
+### Create Executable JAR
+```bash
+gradle shadowJar
+```
+
+## Troubleshooting
+
+### Tests not recognized
+```bash
+gradle clean build
+```
+
+### JavaFX not loading
+Ensure `build.gradle` has JavaFX plugin:
+```gradle
+plugins {
+    id 'org.openjfx.javafxplugin' version '0.0.13'
+}
+```
+
+### Game window won't open
+- Check Java version: `java -version` (should be 17+)
+- Rebuild: `gradle clean build`
+
+## Future Enhancements
+
+- [ ] Leaderboard system
+- [ ] Power-up items
+- [ ] Boss battles
+- [ ] Multiple game modes
+- [ ] Sound effects and music
+- [ ] Mobile version
+- [ ] Online multiplayer
+
+## Documentation
+
+- **JavaDoc**: Generated documentation in `/javaDocs` folder
+- **Architecture Guide**: See `javaDocs/guides/architecture.html`
+- **Quick Start**: See `javaDocs/guides/quick-start.html`
+- **Features Guide**: See `javaDocs/guides/features.html`
+
+## License
+
+This project is created for educational purposes.
+
+## Credits
+
+- Game Design: VinZaynt
+- Built with: JavaFX, Gradle, JUnit 5
+
+## Getting Help
+
+1. Check the troubleshooting section above
+2. Review JavaDoc documentation
+3. Check test files for usage examples
+4. Review architecture guide for design patterns
 
 ---
 
-## 📝 Developer Notes
-The project uses a manual game loop via JavaFX `AnimationTimer`, targeting frame-rate independence. All entities inherit from `GameObject`, which provides basic physics and AABB collision detection.
+**Happy playing! 🎮**

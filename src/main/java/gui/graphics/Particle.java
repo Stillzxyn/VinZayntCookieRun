@@ -1,4 +1,4 @@
-package gui.graphics.effects;
+package gui.graphics;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;

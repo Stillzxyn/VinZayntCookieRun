@@ -1,9 +1,13 @@
 package application;
 
 import core.entities.base.Cookie;
-import core.entities.cookies.CookieList;
+import game.managers.CookieManager;
+import audio.SoundManager;
 
-import ui.views.pages.*;
+import gui.pages.CookieSelectView;
+import gui.pages.GameStage;
+import gui.pages.HomePageView;
+import gui.pages.StageSelectView;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -41,6 +45,9 @@ public class CookieRunApp extends Application {
         stage.setTitle("VinZaynt's Cookie Run");
 
         stage.setResizable(false);
+
+        // Initialize all game sounds
+        SoundManager.getInstance().initializeSounds();
 
         showHomePage();
 
@@ -88,7 +95,7 @@ public class CookieRunApp extends Application {
         selectedStageIndex = stageIndex;
 
         Cookie cookie =
-                CookieList.get(cookieIndex);
+                CookieManager.getInstance().loadCookie(cookieIndex);
 
         GameStage gameStage =
                 new GameStage(

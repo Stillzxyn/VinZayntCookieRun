@@ -22,7 +22,9 @@ import utils.Updatable;
  * - Basic object lifecycle
  */
 public abstract class GameObject implements Renderable, Updatable, Collidable, Spawnable {
-
+    /**
+     * GameObject Position
+     */
     protected double x;
     protected double y;
 

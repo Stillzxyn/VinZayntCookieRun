@@ -1,4 +1,4 @@
-package core.entities.collectibles;
+package game.collectibles;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;

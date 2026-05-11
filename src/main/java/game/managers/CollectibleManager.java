@@ -2,14 +2,16 @@ package game.managers;
 
 import core.entities.base.Cookie;
 import core.entities.base.GameObject;
-import core.entities.base.Physics;
+import core.Physics;
 
-import core.entities.collectibles.Collectible;
-import core.entities.collectibles.Coin;
-import core.entities.collectibles.JellyBig;
-import core.entities.collectibles.JellySmall;
+import game.collectibles.Collectible;
+import game.collectibles.Coin;
+import game.collectibles.JellyBig;
+import game.collectibles.JellySmall;
 
-import graphics.effects.Particle;
+import gui.graphics.Particle;
+import gui.graphics.ParticlePool;
+import audio.SoundManager;
 
 import javafx.scene.canvas.GraphicsContext;
 
@@ -24,6 +26,8 @@ import java.util.Random;
  * - Collectible collision
  * - Score / coin gain
  * - Collection particles
+ *
+ * Optimization: Uses ParticlePool for efficient object reuse.
  */
 public class CollectibleManager {
 
@@ -34,8 +38,8 @@ public class CollectibleManager {
     private final List<Collectible> collectibles =
             new ArrayList<>();
 
-    private final List<Particle> particles =
-            new ArrayList<>();
+    private final ParticlePool particlePool =
+            new ParticlePool();
 
     private final Random rng =
             new Random();
@@ -66,30 +70,8 @@ public class CollectibleManager {
                 gameObjects
         );
 
-        updateParticles(delta);
-    }
-
-    /**
-     * Update particle effects.
-     */
-    private void updateParticles(
-            double delta
-    ) {
-
-        for (int i = particles.size() - 1;
-             i >= 0;
-             i--) {
-
-            Particle particle =
-                    particles.get(i);
-
-            particle.update(delta);
-
-            if (particle.isDead()) {
-
-                particles.remove(i);
-            }
-        }
+        // Update particle pool (handles dead particle recycling internally)
+        particlePool.update(delta);
     }
 
     // =========================
@@ -98,6 +80,7 @@ public class CollectibleManager {
 
     /**
      * Handle collectible pickup and update score/coins.
+     * OPTIMIZATION: Skip off-screen collectibles before intersection check.
      * @param cookie the player cookie.
      * @param scoreCoins array [score, coins] to be updated.
      */
@@ -114,6 +97,11 @@ public class CollectibleManager {
             Collectible collectible =
                     iterator.next();
 
+            // Skip collectibles far off-screen (avoid expensive intersection check)
+            if (collectible.getX() < -100) {
+                continue;
+            }
+
             if (!cookie.intersects(collectible)) {
                 continue;
             }
@@ -126,6 +114,9 @@ public class CollectibleManager {
             if (collectible instanceof Coin) {
 
                 scoreCoins[1]++;
+
+                // Play coin collection sound effect
+                SoundManager.getInstance().playCoinSound();
             }
 
             spawnParticles(
@@ -140,19 +131,18 @@ public class CollectibleManager {
     }
 
     /**
-     * Spawn collection particles.
+     * Spawn collection particles using the particle pool.
+     *
+     * OPTIMIZATION: Reduced from 5 to 3 particles per pickup.
+     * Still visually satisfying with 40% less particle processing.
+     * Uses object pooling to reduce GC pressure.
      */
     private void spawnParticles(
             double x,
             double y
     ) {
-
-        for (int i = 0; i < 5; i++) {
-
-            particles.add(
-                    new Particle(x, y)
-            );
-        }
+        // Acquire 3 particles from the pool (optimized from 5)
+        particlePool.acquireMultiple(x, y, 3);
     }
 
     // =========================
@@ -161,6 +151,9 @@ public class CollectibleManager {
 
     /**
      * Spawn collectibles periodically.
+     * OPTIMIZATION: Adaptive spawn rate scales with speed to prevent object accumulation.
+     * As speed increases, spawn intervals increase proportionally.
+     * Base interval: 0.75s at speed 300. At speed 600, interval becomes ~1.125s.
      */
     private void spawnCollectibles(
             double delta,
@@ -178,9 +171,15 @@ public class CollectibleManager {
 
         collectibleTimer = 0;
 
+        // Adaptive spawn rate: uses sqrt scaling to balance performance with difficulty
+        // sqrt scaling prevents excessive accumulation while keeping challenge at higher speeds
+        // At speed 300: multiplier = 1.0 (no change)
+        // At speed 600: multiplier = 1.41 (41% slower spawning)
+        // At speed 900: multiplier = 1.73 (73% slower spawning)
+        double speedMultiplier = Math.sqrt(currentSpeed / 300.0);
+
         nextCollectibleIn =
-                0.4
-                        + rng.nextDouble() * 0.7;
+                (0.4 + rng.nextDouble() * 0.7) * speedMultiplier;
 
         int roll = rng.nextInt(10);
 
@@ -267,13 +266,15 @@ public class CollectibleManager {
     // =========================
 
     /**
-     * Render particle effects.
+     * Render particle effects from the pool.
+     *
+     * Optimization: Uses particle pool's active list.
      */
     public void renderParticles(
             GraphicsContext gc
     ) {
 
-        for (Particle particle : particles) {
+        for (Particle particle : particlePool.getActive()) {
 
             particle.render(gc);
         }

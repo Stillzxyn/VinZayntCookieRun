@@ -1,4 +1,4 @@
-package gui.graphics.rendering;
+package gui.graphics;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;

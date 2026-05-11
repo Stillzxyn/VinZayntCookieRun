@@ -1,37 +1,47 @@
 package game;
 
-import core.abilities.CookieAbility;
 import javafx.scene.canvas.GraphicsContext;
 import core.entities.base.Cookie;
-import core.entities.base.Physics;
+import core.Physics;
 import core.entities.base.GameObject;
-import core.entities.collectibles.Collectible;
-import core.abilities.implementations.MagneticAbility;
+import game.collectibles.Collectible;
+import core.abilities.MagneticAbility;
+import game.managers.CookieManager;
 import game.managers.ObstacleManager;
 import game.managers.CollectibleManager;
 import game.managers.HealthManager;
 import utils.Renderable;
 import utils.Updatable;
+import audio.SoundManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Main game controller.
+ * Central game controller - unified game management system.
  *
  * Responsibilities:
- * - Handle game loop
- * - Update all game systems
- * - Manage input
- * - Handle collisions
- * - Control score/game state
+ * - Handle game loop and real-time updates
+ * - Manage all game systems (cookies, obstacles, collectibles, health)
+ * - Handle user input
+ * - Manage collisions and game state
+ * - Provide centralized access to game managers
+ * - Control score/coins/difficulty
  *
- * Uses manager pattern to separate systems:
- * - ObstacleManager
- * - CollectibleManager
- * - HealthManager
+ * Uses manager pattern to separate concerns:
+ * - CookieManager: Cookie data &amp; access
+ * - ObstacleManager: Obstacle spawning &amp; collisions
+ * - CollectibleManager: Collectible spawning &amp; collisions
+ * - HealthManager: Health item spawning &amp; collisions
  */
 public class GameController implements Renderable, Updatable {
+
+    // Singleton instance for global game access
+    private static GameController instance;
+
+    // Game system managers
+    private final CookieManager cookieManager;
+
     private double cameraShake = 0;
 
     public static final double GROUND_Y   = Physics.GROUND_Y;
@@ -87,8 +97,8 @@ public class GameController implements Renderable, Updatable {
     /**
      * Create game controller.
      *
-     * Also resets cookie state
-     * before starting a new game.
+     * Also resets cookie state and initializes game systems.
+     * Sets this instance as the global singleton.
      */
     public GameController(
             Cookie cookie,
@@ -97,8 +107,25 @@ public class GameController implements Renderable, Updatable {
         this.cookie = cookie;
         this.stage = stage;
         this.difficultyMultiplier = stage.getDifficultyMultiplier();
+        this.cookieManager = CookieManager.getInstance();
+
+        // Set as singleton instance
+        instance = this;
+
         // Reset cookie to initial state for new game
         cookie.reset();
+
+        // Play background music for the stage
+        int stageNum = stage.getStageIndex();
+        SoundManager.getInstance().playStageMusic(stageNum);
+    }
+
+    /**
+     * Get singleton instance of GameController.
+     * Available during gameplay.
+     */
+    public static GameController getInstance() {
+        return instance;
     }
 
     // INPUT
@@ -111,12 +138,11 @@ public class GameController implements Renderable, Updatable {
     }
 
     /**
-     * Triggers a camera shake effect.
+     * Triggers a camera shake effect with easing.
      * @param intensity The magnitude of the shake.
      */
     public void shakeCamera(double intensity) {
-
-        cameraShake = intensity;
+        cameraShake = Math.min(intensity, cameraShake + 3);  // Smooth accumulation
     }
 
     /**
@@ -198,19 +224,19 @@ public class GameController implements Renderable, Updatable {
         }
 
         // Update game objects
-        // We update objects and remove them if they are dead.
-        // We use an index-based loop for better performance and to avoid concurrent modification issues,
-        // although removeIf is generally safe and fast enough for modern JVMs.
-        for (int i = gameObjects.size() - 1; i >= 0; i--) {
+        // We update objects first, then do a single batch cleanup pass.
+        // This is more efficient than removing items one-by-one during iteration.
+        for (int i = 0; i < gameObjects.size(); i++) {
             GameObject obj = gameObjects.get(i);
             obj.update(delta);
-            if (!obj.isAlive()) {
-                gameObjects.remove(i);
-            }
         }
 
-        // Clean up manager lists as well
-        // These lists should stay in sync with gameObjects list.
+        /*
+        * Single-pass cleanup: remove dead objects from all lists
+        * removeIf is optimized in modern JVMs and creates a single pass through each list.
+        * Must clean all lists to prevent unbounded memory growth.
+        */
+        gameObjects.removeIf(obj -> !obj.isAlive());
         obstacleManager.getObstacles().removeIf(obj -> !obj.isAlive());
         collectibleManager.getCollectibles().removeIf(obj -> !obj.isAlive());
         healthManager.getHealthItems().removeIf(obj -> !obj.isAlive());
@@ -235,12 +261,7 @@ public class GameController implements Renderable, Updatable {
         healthManager.checkCollision(cookie);
 
         if (cameraShake > 0) {
-
-            cameraShake -= delta * 20;
-
-            if (cameraShake < 0) {
-                cameraShake = 0;
-            }
+            cameraShake = Math.max(0, cameraShake - delta * 20);
         }
     }
 
@@ -301,6 +322,7 @@ public class GameController implements Renderable, Updatable {
     // GETTERS
     public int getScore() { return score; }
     public int getCoins() { return coins; }
+    public double getGameTime() { return gameTime; }
     public boolean isGameOver() { return gameOver; }
     public boolean isPaused() { return paused; }
     public Cookie getCookie() { return cookie; }
@@ -327,19 +349,77 @@ public class GameController implements Renderable, Updatable {
     }
 
     /**
-     * Apply magnetic force to collectibles.
+     * Apply magnetic force to collectibles within range.
+     *
+     * OPTIMIZATION: Skip off-screen collectibles before distance checks.
+     * Only applies force to collectibles within the magnetic radius,
+     * avoiding unnecessary physics calculations for distant items.
      *
      * Used by MagneticAbility.
      */
     public void applyMagneticForceToCollectibles(
             MagneticAbility ability
     ) {
+        double magneticRadius = ability.getMagneticRadius();
+        double cookieX = cookie.getX() + cookie.getWidth() / 2;
+        double cookieY = cookie.getY() + cookie.getHeight() / 2;
+
         for (Collectible c : collectibleManager.getCollectibles()) {
-            ability.applyForceToCollectible(c, cookie);
+            // Skip collectibles far off-screen left (avoid distance calculations)
+            if (c.getX() < -magneticRadius) {
+                continue;
+            }
+
+            double dx = c.getX() - cookieX;
+            double dy = c.getY() - cookieY;
+            double distanceSquared = dx * dx + dy * dy;
+            double radiusSquared = magneticRadius * magneticRadius;
+
+            // Only apply force if within range (using squared distance to avoid sqrt)
+            if (distanceSquared <= radiusSquared) {
+                ability.applyForceToCollectible(c, cookie);
+            }
         }
     }
     public double getCameraShake() {
 
         return cameraShake;
+    }
+
+    // =========================
+    // GAME SYSTEM MANAGEMENT
+    // =========================
+
+    /**
+     * Get the cookie manager system.
+     *
+     * @return CookieManager instance for cookie operations
+     */
+    public CookieManager getCookieManager() {
+        return cookieManager;
+    }
+
+    /**
+     * Reset all game systems.
+     * Call this when starting a new game or returning to menu.
+     */
+    public void resetAll() {
+        cookieManager.clearCache();
+    }
+
+    /**
+     * Get game statistics and debug info.
+     *
+     * @return String with game system statistics
+     */
+    public String getGameInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("=== GAME INFO ===\n");
+        info.append("Score: ").append(score).append("\n");
+        info.append("Coins: ").append(coins).append("\n");
+        info.append("Game Time: ").append(String.format("%.1f", gameTime)).append("s\n");
+        info.append("Current Speed: ").append(String.format("%.0f", currentSpeed)).append("\n");
+        info.append("Cookie Manager: ").append(cookieManager.getStatistics()).append("\n");
+        return info.toString();
     }
 }

@@ -1,4 +1,4 @@
-package gui.views.pages;
+package gui.pages;
 
 import application.CookieRunApp;
 import gui.graphics.BaseBackgroundPane;

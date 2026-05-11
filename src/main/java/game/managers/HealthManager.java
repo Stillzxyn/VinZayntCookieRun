@@ -2,8 +2,8 @@ package game.managers;
 
 import core.entities.base.Cookie;
 import core.entities.base.GameObject;
-import core.entities.base.Physics;
-import core.entities.items.HealthItem;
+import core.Physics;
+import game.items.HealthItem;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -55,6 +55,7 @@ public class HealthManager {
 
     /**
      * Heal cookie on pickup.
+     * OPTIMIZATION: Skip off-screen health items before collision check.
      */
     public void checkCollision(
             Cookie cookie
@@ -67,6 +68,11 @@ public class HealthManager {
 
             HealthItem item =
                     iterator.next();
+
+            // Skip items far off-screen (avoid collision check)
+            if (item.getX() < -100) {
+                continue;
+            }
 
             if (!item.collides(cookie)) {
                 continue;

@@ -1,4 +1,4 @@
-package core.entities.items;
+package game.items;
 
 import core.entities.base.GameObject;
 import javafx.scene.canvas.GraphicsContext;
