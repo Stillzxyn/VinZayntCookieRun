@@ -4,6 +4,9 @@ import core.entities.base.Cookie;
 import core.entities.base.GameObject;
 import core.Physics;
 import game.items.HealthItem;
+import gamelogic.events.EventBus;
+import gamelogic.events.HealthChangedEvent;
+import audio.SoundManager;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -63,6 +66,7 @@ public class HealthManager {
 
         Iterator<HealthItem> iterator =
                 healthItems.iterator();
+        EventBus eventBus = EventBus.getInstance();
 
         while (iterator.hasNext()) {
 
@@ -78,7 +82,20 @@ public class HealthManager {
                 continue;
             }
 
-            cookie.heal(25);
+            // Record old health for event
+            double oldHp = cookie.getHp();
+            CookieManager.getInstance().heal(cookie, 25);
+            double newHp = cookie.getHp();
+
+            // Play healing sound
+            SoundManager.getInstance().playClickSound();
+
+            // Post health changed event
+            eventBus.publish(new HealthChangedEvent(
+                (int) oldHp,
+                (int) newHp,
+                "Health item pickup"
+            ));
 
             item.destroy();
 

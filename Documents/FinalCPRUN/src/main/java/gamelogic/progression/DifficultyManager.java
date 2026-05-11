@@ -1,20 +1,18 @@
 package gamelogic.progression;
 
-import game.config.DifficultyConfig;
+import core.stages.Stage;
+import game.config.GameConfig;
 
 /**
- * DifficultyManager - Manages overall game difficulty progression.
- * Singleton that tracks and applies difficulty scaling.
+ * DifficultyManager - Manages stage-based difficulty.
+ * Difficulty is stored in the Stage class.
+ * No time-based progression or waves.
  */
 public class DifficultyManager {
     private static DifficultyManager instance;
-    private DifficultyScaler scaler;
-    private int currentStage = 0;
-    private long gameStartTime = 0;
-    private double currentGameSpeed = 300.0;
+    private Stage currentStage;
 
     private DifficultyManager() {
-        this.scaler = new DifficultyScaler();
     }
 
     public static synchronized DifficultyManager getInstance() {
@@ -27,87 +25,45 @@ public class DifficultyManager {
     /**
      * Initialize difficulty for a stage.
      */
-    public void initializeStage(int stageNumber) {
-        this.currentStage = stageNumber;
-        this.gameStartTime = System.currentTimeMillis();
-        this.currentGameSpeed = 300.0 * getStageMultiplier();
+    public void initializeStage(Stage stage) {
+        this.currentStage = stage;
     }
 
     /**
-     * Update difficulty based on elapsed time.
-     * Called each frame to dynamically increase difficulty.
+     * Update difficulty (no-op for stage-based system).
      */
     public void update() {
-        long elapsedMs = System.currentTimeMillis() - gameStartTime;
-        double elapsedSeconds = elapsedMs / 1000.0;
-        
-        // Check for milestone spikes
-        checkMilestones(elapsedSeconds);
-        
-        // Apply progressive speed increase
-        currentGameSpeed = scaler.getScaledSpeed(
-            currentStage,
-            elapsedSeconds
-        );
+        // Stage difficulty is fixed - no updates needed
     }
 
     /**
-     * Check if milestones have been reached and apply spike multipliers.
-     */
-    private void checkMilestones(double elapsedSeconds) {
-        int[] milestoneTimes = DifficultyConfig.MILESTONE_TIMES;
-        double[] milestoneMultipliers = DifficultyConfig.MILESTONE_MULTIPLIERS;
-        
-        for (int i = 0; i < milestoneTimes.length; i++) {
-            if (elapsedSeconds >= milestoneTimes[i]) {
-                currentGameSpeed *= milestoneMultipliers[i];
-            }
-        }
-    }
-
-    /**
-     * Get current game speed (affected by difficulty).
+     * Get current game speed based on stage multiplier.
      */
     public double getCurrentGameSpeed() {
-        return currentGameSpeed;
+        if (currentStage == null) return GameConfig.BASE_GAME_SPEED;
+        return GameConfig.BASE_GAME_SPEED * currentStage.getSpeedMultiplier();
     }
 
     /**
-     * Get spawn rate multiplier (obstacles/collectibles spawn faster).
+     * Get spawn rate multiplier from current stage.
      */
     public double getSpawnRateMultiplier() {
-        long elapsedMs = System.currentTimeMillis() - gameStartTime;
-        double elapsedSeconds = elapsedMs / 1000.0;
-        return scaler.getSpawnMultiplier(currentStage, elapsedSeconds);
+        if (currentStage == null) return 1.0;
+        return currentStage.getSpawnMultiplier();
     }
 
     /**
-     * Get stage multiplier.
+     * Get current stage.
      */
-    public double getStageMultiplier() {
-        if (currentStage < DifficultyConfig.STAGE_SPEED_MULTIPLIERS.length) {
-            return DifficultyConfig.STAGE_SPEED_MULTIPLIERS[currentStage];
-        }
-        return 1.0;
-    }
-
-    /**
-     * Get difficulty percentage (0-100).
-     */
-    public double getDifficultyPercentage() {
-        long elapsedMs = System.currentTimeMillis() - gameStartTime;
-        double elapsedSeconds = elapsedMs / 1000.0;
-        
-        // Max out at 300 seconds
-        return Math.min((elapsedSeconds / 300.0) * 100, 100);
+    public Stage getCurrentStage() {
+        return currentStage;
     }
 
     /**
      * Reset difficulty manager.
      */
     public void reset() {
-        currentStage = 0;
-        gameStartTime = 0;
-        currentGameSpeed = 300.0;
+        currentStage = null;
     }
 }
+

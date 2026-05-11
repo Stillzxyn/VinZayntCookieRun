@@ -6,11 +6,17 @@ import core.abilities.CookieAbility;
 import core.stages.StageList;
 
 import game.GameController;
+import game.config.GameConfig;
 
 import gui.graphics.ScrollingLayer;
 
 import gui.components.GameOverPane;
 import gui.graphics.FontLoader;
+
+import gamelogic.events.EventBus;
+import gamelogic.events.CoinCollectedEvent;
+import gamelogic.events.HealthChangedEvent;
+import gamelogic.events.ObstacleHitEvent;
 
 import utils.Renderable;
 import utils.Updatable;
@@ -76,7 +82,7 @@ public class GameStage extends StackPane {
     // ===== FPS COUNTER =====
     private int frameCounter = 0;
     private long lastSecond = System.currentTimeMillis();
-    private double displayedFps = 60.0;
+    private double displayedFps = GameConfig.TARGET_FPS;
     // =======================
 
     // ===== INPUT BUFFERING (Reduce Input Lag) =====
@@ -132,6 +138,7 @@ public class GameStage extends StackPane {
         setFocusTraversable(true);
         loadImages();
         bindInput();
+        setupEventListeners();
     }
 
     // =========================
@@ -268,6 +275,43 @@ public class GameStage extends StackPane {
     }
 
     // =========================
+    // EVENT LISTENERS
+    // =========================
+
+    /**
+     * Setup EventBus listeners for game events.
+     * Events are published by game managers and handled here for UI updates.
+     */
+    private void setupEventListeners() {
+        EventBus eventBus = EventBus.getInstance();
+
+        // Listen for coin collection
+        eventBus.subscribe("COIN_COLLECTED", event -> {
+            CoinCollectedEvent e = (CoinCollectedEvent) event;
+            // Event already triggered sound effect in CollectibleManager
+            // This listener can be used for visual effects or logging
+            System.out.println("Coin collected! Value: " + e.getCoinValue());
+        });
+
+        // Listen for health changes
+        eventBus.subscribe("HEALTH_CHANGED", event -> {
+            HealthChangedEvent e = (HealthChangedEvent) event;
+            // Event already triggered sound effect in HealthManager
+            // HUD updates happen in drawHPBar() which reads from GameController
+            System.out.println("Health changed from " + e.getOldHealth() + " to " + e.getNewHealth() +
+                    " (" + e.getReason() + ")");
+        });
+
+        // Listen for obstacle hits
+        eventBus.subscribe("OBSTACLE_HIT", event -> {
+            ObstacleHitEvent e = (ObstacleHitEvent) event;
+            // Event already triggered camera shake and sound in ObstacleManager
+            // Red overlay animation happens in drawRedOverlay()
+            System.out.println("Hit by " + e.getObstacleType() + "! Damage: " + e.getDamageAmount());
+        });
+    }
+
+    // =========================
     // GAME LOOP
     // =========================
 
@@ -387,9 +431,11 @@ public class GameStage extends StackPane {
         drawRedOverlay(gc);
 
         // ===== DRAW FPS COUNTER =====
-        gc.setFont(Font.font("Arial", 11));
-        gc.setFill(Color.web("#FFFFFF", 0.7));  // Semi-transparent gold
-        gc.fillText("FPS: " + String.format("%.1f", displayedFps), 15, 435);  // Bottom-left corner
+        if (GameConfig.SHOW_FPS) {
+            gc.setFont(Font.font("Arial", 11));
+            gc.setFill(Color.web("#FFFFFF", 0.7));  // Semi-transparent white
+            gc.fillText("FPS: " + String.format("%.1f", displayedFps), 15, 435);  // Bottom-left corner
+        }
         // =============================
 
         gc.restore();

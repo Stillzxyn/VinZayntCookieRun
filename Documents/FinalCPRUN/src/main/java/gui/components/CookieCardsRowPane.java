@@ -2,6 +2,7 @@ package gui.components;
 
 import core.entities.base.Cookie;
 import game.managers.CookieManager;
+import game.cookies.CookieList;
 import audio.SoundManager;
 import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
@@ -22,59 +23,64 @@ public class CookieCardsRowPane extends HBox {
     private final List<CookieSelectionCard> cards = new ArrayList<>();
 
     public CookieCardsRowPane(int initialSelection) {
-        // Always select first cookie (after sorting)
+        // No visual pre-selection - user must click a cookie
+        // But keep selectedIndex at 0 internally for valid state
         this.selectedIndex = 0;
         this.setAlignment(Pos.CENTER);
         this.setSpacing(20);
         this.setStyle("-fx-background-color: transparent;");
 
-        CookieManager manager = CookieManager.getInstance();
+        // Create a list of (originalIndex, cookie) pairs
+        List<java.util.AbstractMap.SimpleEntry<Integer, Cookie>> cookieList = new ArrayList<>();
+        for (int i = 0; i < CookieList.size(); i++) {
+            cookieList.add(new java.util.AbstractMap.SimpleEntry<>(i, CookieList.get(i)));
+        }
 
-        // Get all cookies and sort by tier (S→A→B→C), then by name
-        List<Cookie> allCookies = manager.getAllCookies();
-        allCookies.sort(
+        // Sort by tier, then by name (using the cookie's properties)
+        cookieList.sort(
             Comparator
-                .comparingInt((Cookie c) -> getTierRank(c.getTier()))  // Sort by tier rank (S=0, A=1, B=2, C=3)
-                .thenComparing(Cookie::getDisplayName)  // Then by name alphabetically
+                .comparingInt((java.util.AbstractMap.SimpleEntry<Integer, Cookie> entry) -> getTierRank(entry.getValue().getTier()))
+                .thenComparing(entry -> entry.getValue().getDisplayName())
         );
 
         // Create cards in sorted order
-        for (int i = 0; i < allCookies.size(); i++) {
-            Cookie cookie = allCookies.get(i);
+        for (int i = 0; i < cookieList.size(); i++) {
+            java.util.AbstractMap.SimpleEntry<Integer, Cookie> entry = cookieList.get(i);
+            int originalIndex = entry.getKey();
+            Cookie cookie = entry.getValue();
+
+            // No cards are pre-selected
             CookieSelectionCard card = new CookieSelectionCard(
                 cookie,
                 i,
-                i == 0  // Only first cookie is selected
+                originalIndex,
+                false
             );
-
-            // Set click handler to select cookie
-            final int index = i;
-            card.setOnMouseClicked(e -> selectCard(index));
 
             cards.add(card);
             this.getChildren().add(card);
-        }
 
-        // Set first cookie as selected with selected style (golden border)
-        if (!cards.isEmpty()) {
-            CookieSelectionCard firstCard = cards.get(0);
-            firstCard.setSelected(true);
-            // Selected style is applied automatically via setSelected(true)
+            // Set click handler to select cookie using original index
+            final int index = originalIndex;
+            card.setOnMouseClicked(e -> {
+                selectCard(index);
+                e.consume();  // Consume event to prevent propagation
+            });
         }
     }
 
-    private void selectCard(int index) {
+    private void selectCard(int originalIndex) {
         // Play click sound
         SoundManager.getInstance().playClickSound();
 
-        this.selectedIndex = index;
+        this.selectedIndex = originalIndex;
 
         // Notify CookieManager of button press
-        CookieManager.getInstance().onCookieButtonPressed(index);
+        CookieManager.getInstance().onCookieButtonPressed(originalIndex);
 
-        // Update visual selection on all cards
+        // Update visual selection on all cards (compare by original index)
         for (int i = 0; i < cards.size(); i++) {
-            cards.get(i).setSelected(i == index);
+            cards.get(i).setSelected(cards.get(i).getOriginalIndex() == originalIndex);
         }
     }
 

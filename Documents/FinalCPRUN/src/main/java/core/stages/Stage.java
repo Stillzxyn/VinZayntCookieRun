@@ -11,18 +11,23 @@ public class Stage {
     private final String description;
     private final String difficulty;
     private final double difficultyMultiplier;
+    private final double speedMultiplier;
+    private final double spawnMultiplier;
     private final String playBackgroundPath;
     private final String jellyLogoPath;
 
     /**
-     * Create a stage with description, difficulty, and damage multiplier.
+     * Create a stage with description, difficulty, and multipliers.
      */
-    public Stage(int id, String displayName, String worldName, String description, String difficulty, double difficultyMultiplier) {
+    public Stage(int id, String displayName, String worldName, String description, String difficulty,
+                 double difficultyMultiplier, double speedMultiplier, double spawnMultiplier) {
         this.id = id;
         this.displayName = displayName;
         this.description = description;
         this.difficulty = difficulty;
         this.difficultyMultiplier = difficultyMultiplier;
+        this.speedMultiplier = speedMultiplier;
+        this.spawnMultiplier = spawnMultiplier;
         this.playBackgroundPath = String.format("/Stages/%s/%sPlayBg.png", worldName, worldName);
         this.jellyLogoPath = String.format("/Stages/%s/%sJelly.png", worldName, worldName);
     }
@@ -54,4 +59,13 @@ public class Stage {
     public double getDifficultyMultiplier() {
         return difficultyMultiplier;
     }
+
+    public double getSpeedMultiplier() {
+        return speedMultiplier;
+    }
+
+    public double getSpawnMultiplier() {
+        return spawnMultiplier;
+    }
 }
+

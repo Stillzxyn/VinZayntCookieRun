@@ -1,471 +1,141 @@
-# 🍪 Cookie Run - Improved Edition
-
-A high-performance JavaFX-based Cookie Run game with advanced game systems, event-driven architecture, and dynamic difficulty progression.
-
----
-
-## 📋 Project Overview
-
-This is an improved version of the Cookie Run game featuring:
-- **Event-driven architecture** for decoupled systems
-- **Centralized configuration** system
-- **Dynamic scoring** with combo multipliers
-- **Progressive difficulty** that scales with gameplay
-- **Robust ability management** system
-- **Damage calculation** engine
-- **Object pooling** for performance optimization
-
----
-
-## 📁 Project Structure
-
-```
-FinalCPRUN/
-├── src/main/java/
-│   ├── application/
-│   │   └── CookieRunApp.java          [Main entry point]
-│   │
-│   ├── audio/
-│   │   └── SoundManager.java          [Audio management - Singleton]
-│   │
-│   ├── core/
-│   │   ├── Physics.java               [Physics constants]
-│   │   ├── abilities/                 [Cookie abilities]
-│   │   ├── entities/base/             [Game entities]
-│   │   ├── stages/                    [Stage configurations]
-│   │   ├── state/                     [State machine - NEW]
-│   │   ├── pooling/                   [Object pooling - NEW]
-│   │   └── observers/                 [Observer pattern - NEW]
-│   │
-│   ├── game/
-│   │   ├── GameController.java        [Main game orchestrator]
-│   │   ├── managers/                  [Game system managers]
-│   │   ├── collectibles/              [Coin, Jelly items]
-│   │   ├── cookies/                   [Cookie implementations]
-│   │   ├── obstacles/                 [Obstacle types]
-│   │   ├── config/                    [Configuration classes - NEW]
-│   │   ├── damage/                    [Damage system - NEW]
-│   │   └── input/                     [Input handling - NEW]
-│   │
-│   ├── gamelogic/                     [NEW - Core game systems]
-│   │   ├── events/                    [Event system]
-│   │   ├── scoring/                   [Scoring system]
-│   │   └── progression/               [Difficulty progression]
-│   │
-│   ├── gui/
-│   │   ├── baseElements/              [Reusable UI components]
-│   │   ├── components/                [UI panels and cards]
-│   │   ├── graphics/                  [Rendering and effects]
-│   │   └── pages/                     [Game screens]
-│   │
-│   └── utils/
-│       └── [Interface contracts]
-│
-└── README.md (this file)
-```
-
----
-
-## 🆕 New Systems (Phase 1, 2, 3)
-
-### Phase 1 - High Priority ✅
-
-#### 1. **Event System** (`gamelogic/events/`)
-Central pub-sub system for decoupling game logic from UI.
-
-```java
-// Publish events
-EventBus.getInstance().publish(new CoinCollectedEvent(10, x, y));
-
-// Listen to events
-EventBus.getInstance().subscribe("COIN_COLLECTED", event -> {
-    handleCoinCollection((CoinCollectedEvent) event);
-});
-```
-
-**Events:**
-- `CoinCollectedEvent` - When coin is picked up
-- `ObstacleHitEvent` - When obstacle hits player
-- `HealthChangedEvent` - When health changes
-- `GameOverEvent` - When game ends
-- `ComboEvent` - When combo changes
-
----
-
-#### 2. **Config Classes** (`game/config/`)
-Centralized configuration - no magic numbers!
-
-```java
-// Use instead of hardcoded values
-int damage = ObstacleConfig.GROUND_OBSTACLE_DAMAGE;
-double speed = GameConfig.BASE_GAME_SPEED;
-int maxHealth = GameConfig.INITIAL_HEALTH;
-```
+# CP
 
-**Config Files:**
-- `GameConfig` - Window, audio, debug settings
-- `ObstacleConfig` - Obstacle spawning/behavior
-- `CollectibleConfig` - Coin/jelly settings
-- `PhysicsConfig` - Gravity, jump force, bounds
-- `DifficultyConfig` - Stage multipliers, milestones
+A 2D endless-runner built in Java with JavaFX. Pick a cookie, pick a world, then jump and slide your way past obstacles while collecting jellies, coins, and health items. The longer you survive, the faster the world scrolls.
 
----
+## Gameplay
 
-#### 3. **Scoring System** (`gamelogic/scoring/`)
-Dynamic score calculation with combos and multipliers.
+You run automatically. Your job is to:
 
-```java
-ScoreCalculator scorer = ScoreCalculator.getInstance();
+- Jump over ground obstacles (spikes, blocks, candy walls)
+- Slide under air obstacles (bats, cloud spikes, fireballs)
+- Collect coins and jellies for score
+- Pick up health items to top up HP
+- Trigger your cookie's special ability at the right moment
 
-// Collect coin
-int score = scorer.calculateCoinScore(10); // Affected by combo multiplier
+HP drains naturally over time. If it hits zero, or an obstacle KOs you, the run ends.
 
-// Reset on obstacle hit
-scorer.resetCombo();
+## Controls
 
-// Get multiplier
-double multiplier = scorer.getMultiplier(); // Up to 5x
-```
+| Action  | Keys                  |
+|---------|-----------------------|
+| Jump    | Space or Up Arrow     |
+| Slide   | Down Arrow or S       |
+| Ability | E                     |
+| Pause   | P                     |
 
-**Features:**
-- Combo tracking (resets on obstacle hit)
-- Score multipliers (1.0x to 5.0x)
-- Proximity bonuses
-- Achievement tracking
+Mouse also works during gameplay: click the upper half of the screen to jump, the lower half to slide.
 
----
+## Cookies
 
-#### 4. **Difficulty Progression** (`gamelogic/progression/`)
-Automatic difficulty scaling throughout gameplay.
+Five cookies are unlocked from the start, each with their own HP pool and ability:
 
-```java
-DifficultyManager difficulty = DifficultyManager.getInstance();
+| Cookie               | Tier | Ability                                       |
+|----------------------|------|-----------------------------------------------|
+| Blueberry Cookie     | S    | Magnetic pull on nearby coins and jellies     |
+| Brave Gingerbread    | A    | Ghost mode - phase through obstacles briefly  |
+| Pirate Cookie        | A    | Jump boost                                    |
+| Zombie Cookie        | B    | Passive perks                                 |
+| Hero Cookie          | S    | Higher jumps                                  |
 
-difficulty.initializeStage(stageNumber);
-// Game speed and spawn rates automatically increase
-difficulty.update(); // Call every frame
+## Stages
 
-double currentSpeed = difficulty.getCurrentGameSpeed();
-double spawnRate = difficulty.getSpawnRateMultiplier();
-```
+Five worlds, each scaling up speed and obstacle density:
 
-**Features:**
-- Stage-specific speed multipliers
-- Time-based progressive increase
-- Milestone spikes for challenge peaks
-- Wave-based enemy spawning
-- Difficulty percentage tracking
+1. Forest - Easy
+2. Palace - Decent
+3. Theatre - Normal
+4. City of Magic - Hard
+5. CP Grave - CP
 
----
+Difficulty also rises within a single run as you survive longer (handled by `DifficultyManager`).
 
-### Phase 2 - Medium Priority ✅
-
-#### 5. **Ability Manager** (`game/managers/AbilityManager.java`)
-Manages ability activation and cooldowns.
+## Build and Run
 
-```java
-AbilityManager abilityMgr = new AbilityManager();
-abilityMgr.activateAbility(cookieAbility);
-abilityMgr.update(delta);
-
-if (!abilityMgr.isOnCooldown("GhostAbility")) {
-    abilityMgr.activateAbility(new GhostAbility());
-}
-```
-
----
-
-#### 6. **Damage System** (`game/damage/`)
-Centralized damage calculation with armor and types.
-
-```java
-DamageCalculator dmg = DamageCalculator.getInstance();
-
-int finalDamage = dmg.calculateDamage(
-    DamageType.OBSTACLE,  // Damage type
-    baseDamage,           // Base amount
-    armorReduction        // Armor percentage
-);
-```
-
-**Damage Types:**
-- `OBSTACLE` - Standard obstacle damage
-- `COLLISION` - Collision damage (reduced)
-- `FALLING` - Fall damage (heavily reduced)
-- `ABILITY` - Ability-based damage
-- `ENVIRONMENT` - Environmental damage
-
----
-
-#### 7. **State Machine** (`core/state/CookieStateManager.java`)
-Proper state transitions for the cookie.
-
-```java
-CookieStateManager stateManager = new CookieStateManager();
-stateManager.setState(State.JUMPING);
-
-if (stateManager.isInState(State.SLIDING)) {
-    // Handle slide logic
-}
-```
-
----
-
-#### 8. **Input Manager** (`game/input/InputManager.java`)
-Centralized input handling with listeners.
-
-```java
-InputManager input = InputManager.getInstance();
-input.keyPressed(KeyCode.SPACE);
-
-if (input.isKeyPressed(KeyCode.SPACE)) {
-    cookie.jump();
-}
-```
-
----
-
-### Phase 3 - Polish ✅
-
-#### 9. **Object Pooling** (`core/pooling/ObjectPool.java`)
-Reuse objects for better GC performance.
-
-```java
-ObjectPool<Projectile> pool = new ObjectPool<>(
-    () -> new Projectile(),  // Factory
-    10,                       // Initial size
-    50                        // Max size
-);
-
-Projectile p = pool.acquire();
-// Use projectile
-pool.release(p); // Return to pool
-```
-
----
-
-#### 10. **Observer Pattern** (`core/observers/`)
-Game observers for UI updates without coupling.
-
-```java
-ObserverManager.getInstance().addObserver(new GameObserver() {
-    @Override
-    public void onScoreChanged(int score, int coins) {
-        updateScoreDisplay(score, coins);
-    }
-    
-    @Override
-    public void onHealthChanged(int health) {
-        updateHealthBar(health);
-    }
-});
-```
-
----
-
-## 🔌 Integration Guide
-
-### Step 1: Use EventBus in Managers
-
-**Before:**
-```java
-// Direct UI updates (tightly coupled)
-gameController.updateUI(score, coins);
-```
-
-**After:**
-```java
-// Publish events (loosely coupled)
-EventBus.getInstance().publish(new CoinCollectedEvent(value, x, y));
-```
-
-### Step 2: Replace Hardcoded Values
-
-**Before:**
-```java
-private static final double SPAWN_INTERVAL = 0.8;
-private static final int BASE_DAMAGE = 1;
-```
-
-**After:**
-```java
-// Use config classes
-double interval = CollectibleConfig.BASE_SPAWN_INTERVAL;
-int damage = ObstacleConfig.GROUND_OBSTACLE_DAMAGE;
-```
-
-### Step 3: Integrate DifficultyManager
-
-In `GameController`:
-```java
-private DifficultyManager difficultyManager = DifficultyManager.getInstance();
-
-@Override
-public void update(double delta) {
-    difficultyManager.update(); // Update difficulty first
-    
-    // Managers use current speed/spawn rate
-    double speed = difficultyManager.getCurrentGameSpeed();
-    obstacleManager.update(delta, speed, gameObjects);
-}
-```
-
-### Step 4: Wire Up Event Listeners
-
-In `GameStage` or main UI:
-```java
-EventBus bus = EventBus.getInstance();
-
-// Listen for coin collection
-bus.subscribe("COIN_COLLECTED", event -> {
-    CoinCollectedEvent e = (CoinCollectedEvent) event;
-    score += e.getCoinValue();
-    updateScoreDisplay();
-});
-
-// Listen for game over
-bus.subscribe("GAME_OVER", event -> {
-    GameOverEvent e = (GameOverEvent) event;
-    showGameOverScreen(e.getFinalScore(), e.getFinalCoins());
-});
-```
-
----
-
-## 🎮 Game Flow
-
-```
-User Input
-    ↓
-InputManager (processes input)
-    ↓
-GameController (orchestrates)
-    ↓
-Managers (execute logic):
-  - ObstacleManager
-  - CollectibleManager
-  - HealthManager
-  - AbilityManager
-  - DifficultyManager
-    ↓
-EventBus (publishes events)
-    ↓
-Listeners react:
-  - UI updates
-  - Sound effects
-  - Visual effects
-    ↓
-Render & Display
-```
-
----
-
-## 📊 Configuration Example
-
-Change gameplay without touching code:
-
-```java
-// In PhysicsConfig.java
-public static final double JUMP_FORCE = 18.0; // Increase for higher jumps
-
-// In DifficultyConfig.java
-public static final double[] STAGE_SPEED_MULTIPLIERS = {
-    1.0,    // Stage 1 - easy
-    1.1,    // Stage 2
-    1.25,   // Stage 3 - harder
-    1.4,    // Stage 4
-    1.6     // Stage 5 - hardest
-};
-```
-
----
-
-## 🚀 Performance Optimizations
-
-1. **Event Bus** - Eliminates tight coupling, reduces dependencies
-2. **Object Pooling** - Reuses objects, reduces GC pressure
-3. **Config Classes** - Single source of truth, easy tweaking
-4. **Difficulty Scaler** - Uses math curves instead of hardcoded values
-5. **Input Manager** - Centralized, reduces redundant checks
-
----
-
-## 🐛 Known Issues & Future Work
-
-- [ ] Integrate all EventBus calls into existing managers
-- [ ] Replace all magic numbers with config values
-- [ ] Add UI observers for score/health displays
-- [ ] Implement achievement unlock notifications
-- [ ] Add difficulty settings UI
-
----
-
-## 🛠 Build & Run
+Requires JDK 21+ and the Gradle wrapper or local Gradle.
 
 ```bash
 # Build
 gradle clean build
 
-# Run
+# Run the game
 gradle run
 
-# Or in IntelliJ: Run → CookieRunApp
+# Run unit tests
+gradle test
 ```
 
----
+JavaFX 24 is pulled in automatically via the `org.openjfx.javafxplugin` Gradle plugin - no separate JavaFX SDK install needed.
 
-## 📝 Key Classes
+You can also open the project in IntelliJ IDEA and run `application.CookieRunApp` directly.
 
-| Class | Purpose | Type |
-|-------|---------|------|
-| `EventBus` | Event publishing | Singleton |
-| `ScoreCalculator` | Score logic | Singleton |
-| `DifficultyManager` | Difficulty scaling | Singleton |
-| `InputManager` | Input handling | Singleton |
-| `GameConfig` | Configuration | Static |
-| `DamageCalculator` | Damage calculation | Singleton |
-| `ObserverManager` | Observer pattern | Singleton |
+## Project Layout
 
----
+```
+FinalCPRUN/
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   ├── application/      Entry point (CookieRunApp)
+    │   │   ├── audio/            SoundManager (music + SFX)
+    │   │   ├── core/
+    │   │   │   ├── abilities/    Cookie abilities (Magnetic, Ghost, JumpBoost)
+    │   │   │   ├── entities/     Cookie, GameObject, Obstacle, State
+    │   │   │   ├── pooling/      Generic ObjectPool
+    │   │   │   ├── stages/       Stage + StageList
+    │   │   │   └── Physics       Gravity, jump, ground constants
+    │   │   ├── game/
+    │   │   │   ├── GameController        Orchestrates the game loop
+    │   │   │   ├── cookies/              Cookie types + CookieList
+    │   │   │   ├── obstacles/            Air + ground obstacle types
+    │   │   │   ├── collectibles/         Coins, jellies
+    │   │   │   ├── items/                HealthItem
+    │   │   │   ├── managers/             Cookie/Obstacle/Collectible/Health/Ability managers
+    │   │   │   └── config/               Tunable constants
+    │   │   ├── gamelogic/
+    │   │   │   ├── events/               EventBus + game events
+    │   │   │   └── progression/          DifficultyManager
+    │   │   ├── gui/
+    │   │   │   ├── pages/                Home, CookieSelect, StageSelect, GameStage
+    │   │   │   ├── components/           Cards, panes, overlays
+    │   │   │   ├── graphics/             Scrolling layer, particles, fonts
+    │   │   │   └── baseElements/         Reusable buttons and cards
+    │   │   └── utils/                    Animatable / Renderable / Updatable / Collidable / Spawnable
+    │   └── resources/
+    │       ├── CookieSprite/             Per-cookie animation frames
+    │       ├── Stages/                   Backgrounds, jellies, UI for each world
+    │       ├── CookieSelectionPane/      Selection screen art
+    │       ├── HomePage/                 Title screen art
+    │       ├── audio/                    music/ and sfx/
+    │       └── fonts/                    CookieRun Bold.ttf
+    └── test/
+        └── java/                         JUnit 5 + TestFX tests
+```
 
-## 📖 Documentation
+## Architecture Notes
 
-Each class has detailed JavaDoc comments explaining:
-- Purpose and responsibility
-- Usage examples
-- Integration points
-- Key methods
+- **Game loop** runs in `GameStage` via a JavaFX `AnimationTimer`. Delta time is capped at 0.1s to avoid huge jumps on lag spikes.
+- **GameController** owns score, coins, game-over state, and delegates per-system work to managers.
+- **Managers** (`CookieManager`, `ObstacleManager`, `CollectibleManager`, `HealthManager`, `AbilityManager`) each handle their own update + collision pass and keep their object lists clean via a single `removeIf` per frame.
+- **EventBus** (`gamelogic/events/EventBus`) is a lightweight pub/sub used for `COIN_COLLECTED`, `HEALTH_CHANGED`, `OBSTACLE_HIT`, and `GAME_OVER`. UI and audio react to events rather than being called directly.
+- **DifficultyManager** ramps game speed and spawn rates based on stage and elapsed time.
+- **Config classes** under `game/config/` (`GameConfig`, `PhysicsConfig`, `ObstacleConfig`, `CollectibleConfig`) keep tunable constants in one place.
 
----
+## Tuning Quick Reference
 
-## 👨‍💻 Development Notes
+| Constant                       | File              | Notes                                |
+|--------------------------------|-------------------|--------------------------------------|
+| Window size, target FPS, audio | `GameConfig`      | Window 800x450, target 60 FPS        |
+| Gravity, jump velocity, ground | `PhysicsConfig`   | Ground at y=290                      |
+| HP drain rate                  | `CookieManager.update` | ~2 HP/second                    |
+| Health item heal amount        | `HealthManager.checkCollision` | +25 HP per pickup       |
+| Stage speed/spawn multipliers  | `StageList`       | Per-world difficulty                 |
 
-- All singletons are thread-safe
-- Event system is fully decoupled
-- Config classes use static finals for compile-time constants
-- Observer pattern supports multiple listeners
-- Object pooling is generic and reusable
+## Tests
 
----
+Unit tests live under `src/test/java/`. Run with:
 
-## 🎯 Next Steps
+```bash
+gradle test
+```
 
-1. Open `FinalCPRUN` in IntelliJ
-2. Review the new systems in their packages
-3. Start integrating into `GameController`
-4. Replace hardcoded values with config classes
-5. Wire up event listeners in UI components
-6. Test difficulty progression
-7. Tune config values for gameplay balance
-
----
-
-## 📄 License
-
-Game code for learning purposes.
-
----
-
-**Last Updated:** May 11, 2026  
-**Version:** 2.0 (Improved Edition)  
-**Status:** Ready for Integration ✅
+The build uses JUnit 5 and TestFX (with the Glass robot) for JavaFX-aware tests.

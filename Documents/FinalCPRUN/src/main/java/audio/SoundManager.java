@@ -1,5 +1,6 @@
 package audio;
 
+import game.config.GameConfig;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 
@@ -32,12 +33,12 @@ public class SoundManager {
     private MediaPlayer currentMusicPlayer;
     private String currentMusicName = "";  // Track which music is currently playing
 
-    // Volume settings (0.0 to 1.0)
-    private double sfxVolume = 0.5;
-    private double musicVolume = 0.4;
+    // Volume settings (0.0 to 1.0) - initialized from GameConfig
+    private double sfxVolume = GameConfig.SFX_VOLUME * GameConfig.MASTER_VOLUME;
+    private double musicVolume = GameConfig.MUSIC_VOLUME * GameConfig.MASTER_VOLUME;
 
-    // Enable/disable sound
-    private boolean soundEnabled = true;
+    // Enable/disable sound - from GameConfig
+    private boolean soundEnabled = GameConfig.AUDIO_ENABLED;
 
     private SoundManager() {
     }
@@ -100,7 +101,7 @@ public class SoundManager {
      * @param soundName The identifier of the sound to play
      */
     public void playSoundEffect(String soundName) {
-        if (!soundEnabled) return;
+        if (!GameConfig.AUDIO_ENABLED || !soundEnabled) return;
 
         Media media = soundEffects.get(soundName);
         if (media == null) {
@@ -146,6 +147,13 @@ public class SoundManager {
     }
 
     /**
+     * Play jelly collection sound effect.
+     */
+    public void playJellySound() {
+        playSoundEffect("jelly");
+    }
+
+    /**
      * Play game over sound effect.
      */
     public void playGameOverSound() {
@@ -170,7 +178,7 @@ public class SoundManager {
      * @param musicName The identifier of the music to play
      */
     public void playBackgroundMusic(String musicName) {
-        if (!soundEnabled) return;
+        if (!GameConfig.AUDIO_ENABLED || !soundEnabled) return;
 
         // Stop current music
         if (currentMusicPlayer != null) {
@@ -229,10 +237,10 @@ public class SoundManager {
     /**
      * Play stage music.
      *
-     * @param stageIndex The stage number (1-5)
+     * @param stageIndex The stage number (0-4, converted to 1-5 for music files)
      */
     public void playStageMusic(int stageIndex) {
-        playBackgroundMusic("stage" + stageIndex);
+        playBackgroundMusic("stage" + (stageIndex + 1));
     }
 
     /**
@@ -333,6 +341,7 @@ public class SoundManager {
         loadSoundEffect("slide", "/audio/sfx/slide.mp3");
         loadSoundEffect("hit", "/audio/sfx/hit.mp3");
         loadSoundEffect("coin", "/audio/sfx/coin.mp3");
+        loadSoundEffect("jelly", "/audio/sfx/jelly.mp3");
         loadSoundEffect("gameOver", "/audio/sfx/game_over.mp3");
         loadSoundEffect("click", "/audio/sfx/click.mp3");
 

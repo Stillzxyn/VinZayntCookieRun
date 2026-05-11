@@ -1,5 +1,7 @@
 package core;
 
+import game.config.PhysicsConfig;
+
 /**
  * Physics system for game objects.
  *
@@ -14,19 +16,19 @@ package core;
 public class Physics {
 
     // =========================
-    // PHYSICS CONSTANTS
+    // PHYSICS CONSTANTS (from PhysicsConfig)
     // =========================
 
     // Physics constants (optimized for snappy response)
-    public static final double GRAVITY = 2000.0;      // Increased for snappier feel
-    public static final double JUMP_VELOCITY = -750.0; // Increased for responsive jump
+    public static final double GRAVITY = PhysicsConfig.GRAVITY;
+    public static final double JUMP_VELOCITY = PhysicsConfig.JUMP_VELOCITY;
 
     // Ground position
-    public static final double GROUND_Y = 290.0;
+    public static final double GROUND_Y = PhysicsConfig.GROUND_Y;
 
     // Player hitbox sizes
-    public static final double NORMAL_H = 70.0;
-    public static final double SLIDE_H = 40.0;
+    public static final double NORMAL_H = PhysicsConfig.NORMAL_H;
+    public static final double SLIDE_H = PhysicsConfig.SLIDE_H;
 
     // =========================
     // STATE

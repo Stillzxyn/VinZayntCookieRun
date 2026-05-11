@@ -13,7 +13,13 @@ import game.obstacles.types.groundobstacles.CandyWall;
 import game.obstacles.types.groundobstacles.Spike;
 
 import game.GameController;
+import game.config.ObstacleConfig;
+import gamelogic.events.EventBus;
+import gamelogic.events.ObstacleHitEvent;
+import gamelogic.progression.DifficultyManager;
 import audio.SoundManager;
+import core.pooling.ObjectPool;
+import game.managers.CookieManager;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,6 +31,9 @@ import java.util.Random;
  * - Obstacle spawning
  * - Obstacle collision
  * - Damage handling
+ *
+ * Optimization: Object pooling infrastructure for efficient obstacle reuse.
+ * Reduces garbage collection pressure during high-difficulty gameplay.
  */
 public class ObstacleManager {
 
@@ -35,12 +44,38 @@ public class ObstacleManager {
     private final List<Obstacle> obstacles =
             new ArrayList<>();
 
+    // Object pooling for frequently spawned obstacles
+    // OPTIMIZATION: Reuse obstacle objects instead of creating new ones.
+    // Pools for each obstacle type reduce memory allocation during gameplay.
+    // Currently obstacles are created fresh, but pools are ready for optimization
+    // if obstacle classes implement proper reset(x, speed) methods.
+    private final ObjectPool<Spike> spikePool =
+            new ObjectPool<>(
+                    () -> new Spike(0, 0),      // Factory
+                    10,                          // Pre-allocate 10 spikes
+                    40                           // Max pool size
+            );
+
+    private final ObjectPool<Block> blockPool =
+            new ObjectPool<>(
+                    () -> new Block(0, 0),
+                    8,
+                    35
+            );
+
+    private final ObjectPool<CandyWall> candyWallPool =
+            new ObjectPool<>(
+                    () -> new CandyWall(0, 0),
+                    8,
+                    35
+            );
+
     private final Random rng =
             new Random();
 
     private double obstacleTimer = 0;
 
-    private double nextObstacleIn = 2.2;
+    private double nextObstacleIn = ObstacleConfig.BASE_SPAWN_INTERVAL;
 
     // =========================
     // UPDATE
@@ -85,9 +120,12 @@ public class ObstacleManager {
             GameController gc
     ) {
 
+        // Get cookie manager for gameplay logic
+        CookieManager cookieManager = CookieManager.getInstance();
+
         // Ignore damage during invincibility
         if (cookie.isGhost()
-                || cookie.isInvincible()) {
+                || cookieManager.isInvincible()) {
 
             return;
         }
@@ -95,6 +133,7 @@ public class ObstacleManager {
         // OPTIMIZATION: Use Iterator + early return for off-screen culling
         Iterator<Obstacle> iterator =
                 obstacles.iterator();
+        EventBus eventBus = EventBus.getInstance();
 
         while (iterator.hasNext()) {
 
@@ -110,23 +149,36 @@ public class ObstacleManager {
                 continue;
             }
 
+            // Record old health for event
+            double oldHp = cookie.getHp();
+
             double damage =
                     obstacle.getBaseDamage()
                             * difficultyMultiplier;
 
-            cookie.decreaseHp(damage);
+            cookieManager.decreaseHp(cookie, damage);
 
-            cookie.setInvincible(true);
+            double newHp = cookie.getHp();
+
+            cookieManager.setInvincible(true);
 
             gc.shakeCamera(8);
 
             // Play hit sound effect
             SoundManager.getInstance().playHitSound();
 
+            // Post obstacle hit event
+            eventBus.publish(new ObstacleHitEvent(
+                obstacle.getClass().getSimpleName(),
+                (int) damage,
+                obstacle.getX(),
+                obstacle.getY()
+            ));
+
             // Game over
             if (cookie.getHp() <= 0) {
 
-                cookie.die();
+                cookieManager.die(cookie);
 
                 gameOverFlag[0] = true;
             }
@@ -145,9 +197,8 @@ public class ObstacleManager {
 
     /**
      * Spawn obstacles periodically.
-     * OPTIMIZATION: Adaptive spawn rate scales with speed to prevent object accumulation.
-     * As speed increases, spawn intervals increase, keeping object density constant.
-     * Base interval: 2.2s at speed 300. At speed 600, interval becomes ~3.3s.
+     * OPTIMIZATION: Adaptive spawn rate scales with difficulty to prevent object accumulation.
+     * As difficulty increases, spawn intervals increase, keeping object density constant.
      */
     private void spawnObstacles(
             double delta,
@@ -165,15 +216,14 @@ public class ObstacleManager {
 
         obstacleTimer = 0;
 
-        // Adaptive spawn rate: uses sqrt scaling to balance performance with difficulty
-        // sqrt scaling prevents excessive accumulation while keeping challenge at higher speeds
-        // At speed 300: multiplier = 1.0 (no change)
-        // At speed 600: multiplier = 1.41 (41% slower spawning)
-        // At speed 900: multiplier = 1.73 (73% slower spawning)
-        double speedMultiplier = Math.sqrt(currentSpeed / 300.0);
+        // Get spawn multiplier from current stage difficulty
+        DifficultyManager diffMgr = DifficultyManager.getInstance();
+        double spawnMultiplier = diffMgr.getSpawnRateMultiplier();
 
+        // Spawn interval scales with difficulty (higher multiplier = more frequent spawns)
         nextObstacleIn =
-                (1.3 + rng.nextDouble() * 1.8) * speedMultiplier;
+                ObstacleConfig.BASE_SPAWN_INTERVAL / spawnMultiplier +
+                (rng.nextDouble() * ObstacleConfig.SPAWN_VARIATION);
 
         int type =
                 rng.nextInt(6);

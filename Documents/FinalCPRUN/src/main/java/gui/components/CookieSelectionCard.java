@@ -24,12 +24,14 @@ public class CookieSelectionCard extends BaseCard {
 
     private final Cookie cookie;
     private final int index;
+    private final int originalIndex;  // Original index from CookieList
     private StackPane iconPane;
 
-    public CookieSelectionCard(Cookie cookie, int index, boolean selected) {
+    public CookieSelectionCard(Cookie cookie, int index, int originalIndex, boolean selected) {
         super(240, 200);
         this.cookie = cookie;
         this.index = index;
+        this.originalIndex = originalIndex;
         this.selected = selected;
         buildCard();
     }
@@ -157,5 +159,8 @@ public class CookieSelectionCard extends BaseCard {
 
         return iconPane;
     }
+
     public Cookie getCookie() {return cookie;}
+
+    public int getOriginalIndex() {return originalIndex;}
 }

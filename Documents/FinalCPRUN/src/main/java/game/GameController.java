@@ -10,6 +10,11 @@ import game.managers.CookieManager;
 import game.managers.ObstacleManager;
 import game.managers.CollectibleManager;
 import game.managers.HealthManager;
+import game.config.GameConfig;
+import game.config.PhysicsConfig;
+import gamelogic.events.EventBus;
+import gamelogic.events.GameOverEvent;
+import gamelogic.progression.DifficultyManager;
 import utils.Renderable;
 import utils.Updatable;
 import audio.SoundManager;
@@ -41,11 +46,13 @@ public class GameController implements Renderable, Updatable {
 
     // Game system managers
     private final CookieManager cookieManager;
+    private final DifficultyManager difficultyManager;
+    private final EventBus eventBus;
 
     private double cameraShake = 0;
 
     public static final double GROUND_Y   = Physics.GROUND_Y;
-    public static final double GAME_WIDTH = 800.0;
+    public static final double GAME_WIDTH = GameConfig.WINDOW_WIDTH;
 
     private final Cookie cookie;
     private final core.stages.Stage stage;
@@ -81,7 +88,7 @@ public class GameController implements Renderable, Updatable {
     private int coins = 0;
 
     private double gameTime = 0;
-    private double currentSpeed = 300.0;
+    private double currentSpeed = GameConfig.BASE_GAME_SPEED;
 
     private boolean gameOver = false;
     private boolean paused = false;
@@ -108,12 +115,28 @@ public class GameController implements Renderable, Updatable {
         this.stage = stage;
         this.difficultyMultiplier = stage.getDifficultyMultiplier();
         this.cookieManager = CookieManager.getInstance();
+        this.difficultyManager = DifficultyManager.getInstance();
+        this.eventBus = EventBus.getInstance();
 
         // Set as singleton instance
         instance = this;
 
-        // Reset cookie to initial state for new game
-        cookie.reset();
+        // Initialize cookie gameplay state - load the cookie that matches
+        // the cookie passed in (so sprites/frames render correctly).
+        int cookieIdx = 0;
+        String cookieName = cookie.getCookieName();
+        for (int i = 0; i < game.cookies.CookieList.size(); i++) {
+            Cookie c = game.cookies.CookieList.get(i);
+            if (c.getCookieName().equals(cookieName)) {
+                cookieIdx = i;
+                break;
+            }
+        }
+        cookieManager.loadCookie(cookieIdx);  // Load correct cookie for gameplay
+        cookieManager.initializeGameplayState();  // Set up gameplay state
+
+        // Initialize stage difficulty
+        difficultyManager.initializeStage(stage);
 
         // Play background music for the stage
         int stageNum = stage.getStageIndex();
@@ -134,7 +157,7 @@ public class GameController implements Renderable, Updatable {
      */
     public void onJump() {
         if (!paused && !gameOver)
-            cookie.jump();
+            cookieManager.jump(cookie);
     }
 
     /**
@@ -150,14 +173,14 @@ public class GameController implements Renderable, Updatable {
      */
     public void onSlide() {
         if (!paused && !gameOver)
-            cookie.slideDown();
+            cookieManager.slideDown(cookie);
     }
 
     /**
      * Handles releasing slide input.
      */
     public void onReleaseSlide() {
-        cookie.releaseSlide();
+        cookieManager.releaseSlide(cookie);
     }
 
     /**
@@ -190,26 +213,29 @@ public class GameController implements Renderable, Updatable {
      * - Game over logic
      */
     public void update(double delta) {
-
         // Update red overlay timer (even when paused)
         if (redOverlayTimer > 0) {
             redOverlayTimer -= delta;
         }
-
         if (paused || gameOver)
             return;
 
-        gameTime += delta;
-        currentSpeed = 300.0 + gameTime * 16;
+        // Update stage difficulty
+        difficultyManager.update();
+        currentSpeed = difficultyManager.getCurrentGameSpeed();
 
+        gameTime += delta;
+
+        // Score increases based on current speed
         score += (int)(delta * currentSpeed * 0.05);
 
-        cookie.update(delta);
-
-        cookie.decreaseHp(delta * 0.1);
+        // Update cookie gameplay state (also applies natural HP drain inside)
+        cookieManager.update(cookie, delta);
 
         if(cookie.getHp() <= 0) {
             gameOver = true;
+            // Publish game over event
+            eventBus.publish(new GameOverEvent(score, coins, stage.getStageIndex()));
         }
 
         // Update managers
@@ -272,7 +298,8 @@ public class GameController implements Renderable, Updatable {
             obj.render(gc);
         }
 
-        cookie.render(gc);
+        // Render cookie through CookieManager
+        cookieManager.render(cookie, gc);
 
 /**
  * Draw magnetic aura effect

@@ -1,7 +1,9 @@
 package application;
 
 import core.entities.base.Cookie;
+import game.GameController;
 import game.managers.CookieManager;
+import game.config.GameConfig;
 import audio.SoundManager;
 
 import gui.pages.CookieSelectView;
@@ -22,10 +24,9 @@ import javafx.stage.Stage;
  * - Start the game
  */
 public class CookieRunApp extends Application {
-
-    // Window size
-    public static final int WIDTH  = 800;
-    public static final int HEIGHT = 450;
+    // Window size (from GameConfig)
+    public static final int WIDTH  = GameConfig.WINDOW_WIDTH;
+    public static final int HEIGHT = GameConfig.WINDOW_HEIGHT;
 
     // Main window
     private Stage primaryStage;
@@ -44,7 +45,7 @@ public class CookieRunApp extends Application {
 
         stage.setTitle("VinZaynt's Cookie Run");
 
-        stage.setResizable(false);
+        stage.setResizable(GameConfig.RESIZABLE);
 
         // Initialize all game sounds
         SoundManager.getInstance().initializeSounds();
