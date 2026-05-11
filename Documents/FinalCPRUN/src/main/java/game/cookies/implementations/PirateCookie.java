@@ -4,6 +4,15 @@ import core.entities.base.Cookie;
 import core.abilities.GhostAbility;
 import javafx.scene.paint.Color;
 
+/**
+ * Pirate Cookie - A-tier cookie with the active {@link GhostAbility}.
+ *
+ * <p>Pressing the ability key turns the cookie intangible for 3 seconds,
+ * letting it phase through obstacles. The ability has a 5-second cooldown
+ * after the ghost phase ends. Starts with 105 HP.</p>
+ *
+ * @see GhostAbility
+ */
 public class PirateCookie extends Cookie {
 
     public PirateCookie() {

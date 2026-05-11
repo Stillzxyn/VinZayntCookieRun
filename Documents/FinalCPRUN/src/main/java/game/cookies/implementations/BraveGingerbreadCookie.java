@@ -3,6 +3,12 @@ package game.cookies.implementations;
 import core.entities.base.Cookie;
 import javafx.scene.paint.Color;
 
+/**
+ * Brave Gingerbread Cookie - C-tier cookie with no special ability.
+ *
+ * <p>The baseline cookie - solid HP (110), no perks. Useful as a difficulty
+ * benchmark and as a starting choice for new players.</p>
+ */
 public class BraveGingerbreadCookie extends Cookie {
 
     public BraveGingerbreadCookie() {

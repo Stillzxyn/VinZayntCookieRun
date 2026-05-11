@@ -1,17 +1,18 @@
 package core.entities.base;
 
-import core.entities.base.Cookie;
-import core.entities.base.State;
+import core.abilities.CookieAbility;
+import core.abilities.JumpBoostAbility;
+import core.abilities.MagneticAbility;
+import game.cookies.implementations.BlueberryCookie;
 import game.cookies.implementations.HeroCookie;
-import javafx.scene.paint.Color;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for Cookie base class.
- * Tests HP management, state, and abilities.
+ * Unit tests for the lightweight Cookie data model.
+ * Cookie is metadata + state holder; gameplay logic lives in CookieManager.
  */
 public class CookieTest {
 
@@ -23,52 +24,45 @@ public class CookieTest {
     }
 
     // =========================
-    // HP SYSTEM TESTS
+    // HP STATE TESTS
     // =========================
 
     @Test
-    public void testInitialHP() {
-        assertTrue(cookie.getHp() > 0, "Should start with positive HP");
-        assertEquals(cookie.getMaxHpValue(), cookie.getHp(), "Should start at max HP");
+    public void testInitialHP_StartsAtMax() {
+        assertTrue(cookie.getHp() > 0, "HP should be positive on construction");
+        assertEquals(cookie.getMaxHpValue(), cookie.getHp(),
+                "Cookie should start at max HP");
     }
 
     @Test
-    public void testDecreaseHP() {
-        double initialHP = cookie.getHp();
-        cookie.decreaseHp(10);
-        assertTrue(cookie.getHp() < initialHP, "HP should decrease");
+    public void testSetHp_NormalValue() {
+        cookie.setHp(42);
+        assertEquals(42, cookie.getHp());
     }
 
     @Test
-    public void testDecreaseHP_NegativeFloor() {
-        cookie.decreaseHp(1000);
-        assertEquals(0, cookie.getHp(), "HP should not go below 0");
-    }
-
-    @Test
-    public void testHeal() {
-        cookie.decreaseHp(50);
-        double hpBeforeHeal = cookie.getHp();
-        cookie.heal(20);
-        assertEquals(hpBeforeHeal + 20, cookie.getHp(), "Healing should increase HP");
-    }
-
-    @Test
-    public void testHeal_MaxCap() {
-        cookie.heal(1000);
-        assertEquals(cookie.getMaxHpValue(), cookie.getHp(), "HP should not exceed max");
-    }
-
-    @Test
-    public void testSetHP() {
-        cookie.setHp(50);
-        assertEquals(50, cookie.getHp());
-    }
-
-    @Test
-    public void testSetHP_NegativeFloor() {
+    public void testSetHp_NegativeClampedToZero() {
         cookie.setHp(-100);
-        assertEquals(0, cookie.getHp(), "HP should not be negative");
+        assertEquals(0, cookie.getHp(), "HP should never go below zero");
+    }
+
+    @Test
+    public void testSetHp_Zero() {
+        cookie.setHp(0);
+        assertEquals(0, cookie.getHp());
+    }
+
+    @Test
+    public void testSetMaxHpValue_PositiveValue() {
+        cookie.setMaxHpValue(150);
+        assertEquals(150, cookie.getMaxHpValue());
+    }
+
+    @Test
+    public void testSetMaxHpValue_NegativeClampedToZero() {
+        cookie.setMaxHpValue(-50);
+        assertEquals(0, cookie.getMaxHpValue(),
+                "Max HP should clamp at zero, not be negative");
     }
 
     // =========================
@@ -76,7 +70,7 @@ public class CookieTest {
     // =========================
 
     @Test
-    public void testGetDisplayName() {
+    public void testGetDisplayName_NonEmpty() {
         assertNotNull(cookie.getDisplayName());
         assertFalse(cookie.getDisplayName().isEmpty());
     }
@@ -88,9 +82,10 @@ public class CookieTest {
     }
 
     @Test
-    public void testGetTier() {
+    public void testGetTier_SingleLetter() {
         assertNotNull(cookie.getTier());
-        assertTrue(cookie.getTier().matches("[A-Z]"), "Tier should be a single letter");
+        assertTrue(cookie.getTier().matches("[A-Z]"),
+                "Tier should be a single uppercase letter");
     }
 
     @Test
@@ -100,36 +95,34 @@ public class CookieTest {
     }
 
     @Test
-    public void testGetMaxHpValue() {
-        assertTrue(cookie.getMaxHpValue() > 0, "Max HP should be positive");
+    public void testGetCookieName_Immutable() {
+        String original = cookie.getCookieName();
+        assertEquals("HeroCookie", original);
+        // cookieName is final — no setter exists, so verifying immutability by type
     }
 
     @Test
-    public void testSetMaxHpValue() {
-        cookie.setMaxHpValue(150);
-        assertEquals(150, cookie.getMaxHpValue());
-    }
-
-    // =========================
-    // STATE TESTS
-    // =========================
-
-    @Test
-    public void testInitialState() {
-        assertEquals(State.RUNNING, cookie.getState());
+    public void testGetIconPath_Set() {
+        Cookie blueberry = new BlueberryCookie();
+        assertTrue(blueberry.getIconPath().contains("BlueberryCookie"),
+                "Icon path should reference cookie's sprite folder");
     }
 
     @Test
-    public void testDieStateChange() {
-        cookie.die();
-        assertEquals(State.DEAD, cookie.getState());
+    public void testGetHex_SetByConstructor() {
+        Cookie blueberry = new BlueberryCookie();
+        assertEquals("#4169E1", blueberry.getHex());
     }
 
     @Test
-    public void testIsAlive() {
-        assertTrue(cookie.isAlive(), "Cookie should be alive initially");
-        cookie.die();
-        assertFalse(cookie.isAlive(), "Dead cookie should not be alive");
+    public void testGetCookieAbilityDescription_NonEmpty() {
+        assertNotNull(cookie.getCookieAbilityDescription());
+        assertFalse(cookie.getCookieAbilityDescription().isEmpty());
+    }
+
+    @Test
+    public void testGetPlaceholderColor_NotNull() {
+        assertNotNull(cookie.getPlaceholderColor());
     }
 
     // =========================
@@ -137,60 +130,89 @@ public class CookieTest {
     // =========================
 
     @Test
-    public void testGetAbility() {
-        assertNotNull(cookie.getAbility(), "HeroCookie should have an ability");
+    public void testHeroCookie_HasJumpBoostAbility() {
+        assertNotNull(cookie.getAbility(),
+                "HeroCookie should have an ability");
+        assertInstanceOf(JumpBoostAbility.class, cookie.getAbility(),
+                "HeroCookie's ability should be JumpBoost");
     }
 
     @Test
-    public void testGhost_Inactive() {
-        assertFalse(cookie.isGhost(), "Should not be ghost initially");
+    public void testBlueberryCookie_HasMagneticAbility() {
+        Cookie blueberry = new BlueberryCookie();
+        assertInstanceOf(MagneticAbility.class, blueberry.getAbility());
     }
 
     @Test
-    public void testSetGhost() {
+    public void testSetAbility() {
+        CookieAbility newAbility = new MagneticAbility();
+        cookie.setAbility(newAbility);
+        assertSame(newAbility, cookie.getAbility());
+    }
+
+    // =========================
+    // GHOST STATE TESTS
+    // =========================
+
+    @Test
+    public void testGhost_DefaultFalse() {
+        assertFalse(cookie.isGhost(),
+                "Cookie should not be in ghost mode by default");
+    }
+
+    @Test
+    public void testSetGhost_TogglesValue() {
         cookie.setGhost(true);
         assertTrue(cookie.isGhost());
-    }
-
-    @Test
-    public void testInvincibility() {
-        assertFalse(cookie.isInvincible(), "Should not be invincible initially");
-        cookie.setInvincible(true);
-        assertTrue(cookie.isInvincible());
+        cookie.setGhost(false);
+        assertFalse(cookie.isGhost());
     }
 
     // =========================
-    // PHYSICS TESTS
+    // POSITION & SIZE TESTS
     // =========================
 
     @Test
-    public void testGetPhysics() {
-        assertNotNull(cookie.getPhysics(), "Physics should not be null");
+    public void testGetPosition_PositiveValues() {
+        assertTrue(cookie.getX() >= 0);
+        assertTrue(cookie.getY() >= 0);
     }
 
     @Test
-    public void testGetPosition() {
-        assertTrue(cookie.getX() >= 0, "X position should be valid");
-        assertTrue(cookie.getY() >= 0, "Y position should be valid");
+    public void testGetDimensions_Positive() {
+        assertTrue(cookie.getWidth() > 0);
+        assertTrue(cookie.getHeight() > 0);
     }
 
     @Test
-    public void testGetDimensions() {
-        assertTrue(cookie.getWidth() > 0, "Width should be positive");
-        assertTrue(cookie.getHeight() > 0, "Height should be positive");
+    public void testSetPosition() {
+        cookie.setX(123);
+        cookie.setY(456);
+        assertEquals(123, cookie.getX());
+        assertEquals(456, cookie.getY());
+    }
+
+    @Test
+    public void testSetSize() {
+        cookie.setWidth(80);
+        cookie.setHeight(90);
+        assertEquals(80, cookie.getWidth());
+        assertEquals(90, cookie.getHeight());
     }
 
     // =========================
-    // RESET TESTS
+    // ALIVE STATE TESTS
     // =========================
 
     @Test
-    public void testReset() {
-        cookie.decreaseHp(50);
-        cookie.setGhost(true);
-        cookie.reset();
+    public void testIsAlive_DefaultTrue() {
+        assertTrue(cookie.isAlive(),
+                "New cookie should be alive");
+    }
 
-        assertEquals(cookie.getMaxHpValue(), cookie.getHp(), "HP should reset to max");
-        assertEquals(State.RUNNING, cookie.getState(), "State should reset to running");
+    @Test
+    public void testSetAlive_False() {
+        cookie.setAlive(false);
+        assertFalse(cookie.isAlive());
     }
 }

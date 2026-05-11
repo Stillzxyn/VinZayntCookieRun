@@ -26,6 +26,9 @@ dependencies {
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    // Required for Gradle 8+ to discover and launch JUnit 5 tests
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 javafx {

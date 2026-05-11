@@ -4,6 +4,14 @@ import core.entities.base.Cookie;
 import core.abilities.MagneticAbility;
 import javafx.scene.paint.Color;
 
+/**
+ * Blueberry Cookie - S-tier cookie with a passive magnetic ability.
+ *
+ * <p>Pulls nearby coins and other magnetic collectibles toward the player.
+ * Starts with 110 HP, slightly above the default 100.</p>
+ *
+ * @see MagneticAbility
+ */
 public class BlueberryCookie extends Cookie {
 
     public BlueberryCookie() {

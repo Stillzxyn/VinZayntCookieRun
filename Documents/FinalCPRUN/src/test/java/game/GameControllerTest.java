@@ -1,10 +1,10 @@
 package game;
 
 import core.entities.base.Cookie;
-import core.entities.base.State;
-import game.cookies.implementations.HeroCookie;
 import core.stages.Stage;
 import core.stages.StageList;
+import game.cookies.implementations.HeroCookie;
+import game.cookies.implementations.BlueberryCookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for GameController.
- * Tests game loop logic, scoring, and state management.
+ * Tests game loop logic, scoring, state management, and cookie integration.
  */
 public class GameControllerTest {
 
@@ -34,18 +34,38 @@ public class GameControllerTest {
     @Test
     public void testConstructor_InitializesController() {
         assertNotNull(controller, "GameController should be created");
-        assertEquals(testCookie, controller.getCookie(), "Cookie should be set");
+        assertSame(testCookie, controller.getCookie(),
+                "Cookie reference should be preserved");
     }
 
     @Test
-    public void testConstructor_CookieReset() {
-        assertEquals(testCookie.getMaxHpValue(), testCookie.getHp(), "Cookie should be reset on init");
+    public void testConstructor_CookieAtMaxHpInitially() {
+        assertEquals(testCookie.getMaxHpValue(), testCookie.getHp(),
+                "Cookie should be at max HP at game start");
     }
 
     @Test
-    public void testSingleton() {
+    public void testSingleton_ReturnsCurrentController() {
         GameController instance = GameController.getInstance();
-        assertEquals(controller, instance, "Singleton should return current controller");
+        assertSame(controller, instance,
+                "Singleton should match the most recently created instance");
+    }
+
+    @Test
+    public void testConstructor_LoadsMatchingCookieType() {
+        // When a HeroCookie is passed in, the loaded cookie should be HeroCookie too
+        Cookie loaded = controller.getCookieManager().getLoadedCookie();
+        assertNotNull(loaded);
+        assertEquals(testCookie.getCookieName(), loaded.getCookieName(),
+                "CookieManager should load a cookie matching the passed-in cookie's type");
+    }
+
+    @Test
+    public void testConstructor_DifferentCookieTypes() {
+        Cookie blueberry = new BlueberryCookie();
+        GameController newCtrl = new GameController(blueberry, testStage);
+        Cookie loaded = newCtrl.getCookieManager().getLoadedCookie();
+        assertEquals("BlueberryCookie", loaded.getCookieName());
     }
 
     // =========================
@@ -53,9 +73,9 @@ public class GameControllerTest {
     // =========================
 
     @Test
-    public void testInitialGameState() {
-        assertFalse(controller.isGameOver(), "Should not be game over initially");
-        assertFalse(controller.isPaused(), "Should not be paused initially");
+    public void testInitialGameState_NotOverNotPaused() {
+        assertFalse(controller.isGameOver());
+        assertFalse(controller.isPaused());
     }
 
     @Test
@@ -68,12 +88,47 @@ public class GameControllerTest {
     }
 
     @Test
-    public void testTogglePause_AfterGameOver() {
-        controller.update(1000); // Force game over by heavy HP loss
-        boolean wasGameOver = controller.isGameOver();
-        boolean pausedBefore = controller.isPaused();
+    public void testTogglePause_BlockedAfterGameOver() {
+        // Force HP to zero to trigger game-over
+        testCookie.setHp(0);
+        controller.update(0.016);
+        boolean wasPaused = controller.isPaused();
         controller.togglePause();
-        assertEquals(pausedBefore, controller.isPaused(), "Should not toggle pause if game over");
+        assertEquals(wasPaused, controller.isPaused(),
+                "Pause should not toggle once the game is over");
+    }
+
+    // =========================
+    // HP DRAIN TESTS
+    // =========================
+
+    @Test
+    public void testHpDrains_OverTime() {
+        double startHp = testCookie.getHp();
+        controller.update(0.5);  // half a second
+        assertTrue(testCookie.getHp() < startHp,
+                "HP should drain naturally over time");
+    }
+
+    @Test
+    public void testGameOver_WhenHpHitsZero() {
+        testCookie.setHp(1);
+        // Run enough simulated time to ensure drain takes HP to zero
+        for (int i = 0; i < 60; i++) {
+            controller.update(0.1);
+            if (controller.isGameOver()) break;
+        }
+        assertTrue(controller.isGameOver() || testCookie.getHp() <= 0,
+                "Game should end once HP reaches zero");
+    }
+
+    @Test
+    public void testHpDoesNotDrain_WhenPaused() {
+        controller.togglePause();
+        double startHp = testCookie.getHp();
+        controller.update(1.0);
+        assertEquals(startHp, testCookie.getHp(),
+                "HP should not drain while paused");
     }
 
     // =========================
@@ -81,43 +136,57 @@ public class GameControllerTest {
     // =========================
 
     @Test
-    public void testInitialScore() {
-        assertEquals(0, controller.getScore(), "Should start with 0 score");
-        assertEquals(0, controller.getCoins(), "Should start with 0 coins");
+    public void testInitialScoreAndCoins_Zero() {
+        assertEquals(0, controller.getScore());
+        assertEquals(0, controller.getCoins());
     }
 
     @Test
-    public void testScoreIncreases_OnUpdate() {
-        int initialScore = controller.getScore();
-        controller.update(0.016); // ~60 FPS frame
-        assertTrue(controller.getScore() >= initialScore, "Score should increase or stay same");
+    public void testScoreIncreases_OverTime() {
+        controller.update(0.5);
+        assertTrue(controller.getScore() > 0,
+                "Score should accumulate from time-based scoring");
     }
 
     @Test
-    public void testScoreIncreases_WithGameTime() {
-        controller.update(0.016);
-        int score1 = controller.getScore();
+    public void testScore_ZeroDelta_NoChange() {
+        controller.update(0.016); // build a little
+        int before = controller.getScore();
+        controller.update(0);
+        assertEquals(before, controller.getScore(),
+                "Zero delta should not change the score");
+    }
+
+    @Test
+    public void testScore_MonotonicallyIncreases() {
         controller.update(0.1);
-        int score2 = controller.getScore();
-        assertTrue(score2 > score1, "Score should increase with longer delta");
+        int s1 = controller.getScore();
+        controller.update(0.1);
+        int s2 = controller.getScore();
+        assertTrue(s2 >= s1, "Score should never decrease during normal play");
     }
 
     // =========================
-    // SPEED TESTS
+    // GAME TIME TESTS
     // =========================
 
     @Test
-    public void testInitialSpeed() {
-        assertTrue(controller.getGameTime() >= 0, "Game time should be >= 0");
+    public void testGameTime_InitiallyZero() {
+        assertEquals(0.0, controller.getGameTime(), 1e-9);
     }
 
     @Test
-    public void testSpeedScales_WithGameTime() {
-        controller.update(0.016);
-        double time1 = controller.getGameTime();
-        controller.update(0.1);
-        double time2 = controller.getGameTime();
-        assertTrue(time2 > time1, "Game time should increase");
+    public void testGameTime_IncreasesWithUpdate() {
+        controller.update(0.25);
+        assertEquals(0.25, controller.getGameTime(), 1e-6);
+    }
+
+    @Test
+    public void testGameTime_DoesNotAdvance_WhenPaused() {
+        controller.togglePause();
+        double before = controller.getGameTime();
+        controller.update(1.0);
+        assertEquals(before, controller.getGameTime(), 1e-9);
     }
 
     // =========================
@@ -125,33 +194,34 @@ public class GameControllerTest {
     // =========================
 
     @Test
-    public void testOnJump_WhilePlaying() {
-        // Jump should be processed
-        controller.onJump();
-        // Cookie jump state would need to be checked on cookie
-        assertTrue(controller.getCookie() != null, "Cookie should exist");
+    public void testOnJump_DoesNotCrash() {
+        assertDoesNotThrow(() -> controller.onJump());
     }
 
     @Test
-    public void testOnJump_WhilePaused() {
+    public void testOnSlide_DoesNotCrash() {
+        assertDoesNotThrow(() -> controller.onSlide());
+    }
+
+    @Test
+    public void testOnReleaseSlide_DoesNotCrash() {
+        assertDoesNotThrow(() -> controller.onReleaseSlide());
+    }
+
+    @Test
+    public void testOnAbility_DoesNotCrash() {
+        assertDoesNotThrow(() -> controller.onAbility());
+    }
+
+    @Test
+    public void testInput_IgnoredWhenPaused() {
         controller.togglePause();
-        controller.onJump();
-        // Jump should be buffered but not processed
-        assertTrue(controller.isPaused());
-    }
-
-    @Test
-    public void testOnSlide() {
-        controller.onSlide();
-        assertTrue(controller.getCookie() != null);
-    }
-
-    @Test
-    public void testOnAbility_WithAbility() {
-        if (controller.getCookie().getAbility() != null) {
+        // These should be safe no-ops, not exceptions
+        assertDoesNotThrow(() -> {
+            controller.onJump();
+            controller.onSlide();
             controller.onAbility();
-            assertTrue(controller.getCookie().getAbility() != null);
-        }
+        });
     }
 
     // =========================
@@ -160,54 +230,42 @@ public class GameControllerTest {
 
     @Test
     public void testCameraShake_InitiallyZero() {
-        assertEquals(0, controller.getCameraShake(), "Should start with no camera shake");
+        assertEquals(0, controller.getCameraShake(),
+                "Should start with no camera shake");
     }
 
     @Test
-    public void testShakeCamera() {
+    public void testShakeCamera_Triggered() {
         controller.shakeCamera(5.0);
-        assertTrue(controller.getCameraShake() > 0, "Camera should shake");
+        assertTrue(controller.getCameraShake() > 0,
+                "Camera shake should be positive after trigger");
     }
 
     @Test
-    public void testCameraShake_Decays() {
+    public void testCameraShake_DecaysOverTime() {
         controller.shakeCamera(10.0);
-        double shakeAfterHit = controller.getCameraShake();
+        double before = controller.getCameraShake();
         controller.update(0.1);
-        double shakeAfterUpdate = controller.getCameraShake();
-        assertTrue(shakeAfterUpdate < shakeAfterHit, "Camera shake should decay over time");
-    }
-
-    // =========================
-    // GAME OVER TESTS
-    // =========================
-
-    @Test
-    public void testGameOver_HPReduction() {
-        testCookie.setHp(10);
-        controller.update(1.0); // Heavy HP loss
-        // Game should detect HP <= 0
-        assertTrue(testCookie.getHp() <= 0 || controller.isGameOver());
-    }
-
-    // =========================
-    // DELTA TIME TESTS
-    // =========================
-
-    @Test
-    public void testUpdate_PositiveDelta() {
-        int scoreBefore = controller.getScore();
-        controller.update(0.016);
-        int scoreAfter = controller.getScore();
-        assertTrue(scoreAfter >= scoreBefore, "Score should not decrease");
+        double after = controller.getCameraShake();
+        assertTrue(after < before, "Camera shake should decay between frames");
     }
 
     @Test
-    public void testUpdate_ZeroDelta() {
-        int scoreBefore = controller.getScore();
-        controller.update(0);
-        int scoreAfter = controller.getScore();
-        assertEquals(scoreBefore, scoreAfter, "No delta should not change score");
+    public void testCameraShake_DoesNotGoNegative() {
+        controller.shakeCamera(1.0);
+        // Run a long update so shake fully decays
+        controller.update(5.0);
+        assertTrue(controller.getCameraShake() >= 0,
+                "Shake should clamp at zero, not go negative");
+    }
+
+    // =========================
+    // RED OVERLAY TESTS
+    // =========================
+
+    @Test
+    public void testRedOverlayOpacity_InitiallyZero() {
+        assertEquals(0.0, controller.getRedOverlayOpacity(), 1e-9);
     }
 
     // =========================
@@ -215,22 +273,24 @@ public class GameControllerTest {
     // =========================
 
     @Test
-    public void testGetCookieManager() {
-        assertNotNull(controller.getCookieManager(), "Should have cookie manager");
-    }
-
-    @Test
-    public void testResetAll() {
-        controller.update(0.1);
-        controller.resetAll();
-        // Cookie manager cache should be cleared
+    public void testGetCookieManager_NotNull() {
         assertNotNull(controller.getCookieManager());
     }
 
     @Test
-    public void testGetGameInfo() {
+    public void testResetAll_PreservesManager() {
+        controller.update(0.1);
+        controller.resetAll();
+        assertNotNull(controller.getCookieManager(),
+                "Manager should still be accessible after reset");
+    }
+
+    @Test
+    public void testGetGameInfo_ContainsKeyFields() {
         String info = controller.getGameInfo();
-        assertNotNull(info, "Game info should not be null");
-        assertTrue(info.contains("Score"), "Should contain score info");
+        assertNotNull(info);
+        assertTrue(info.contains("Score"));
+        assertTrue(info.contains("Coins"));
+        assertTrue(info.contains("Game Time"));
     }
 }

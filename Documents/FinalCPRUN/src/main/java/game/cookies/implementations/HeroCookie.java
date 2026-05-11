@@ -4,6 +4,14 @@ import core.entities.base.Cookie;
 import core.abilities.JumpBoostAbility;
 import javafx.scene.paint.Color;
 
+/**
+ * Hero Cookie - S-tier cookie with a passive jump-boost ability.
+ *
+ * <p>Jumps higher than other cookies thanks to {@link JumpBoostAbility}.
+ * Starts with 115 HP, the highest in the roster.</p>
+ *
+ * @see JumpBoostAbility
+ */
 public class HeroCookie extends Cookie {
 
     public HeroCookie() {
