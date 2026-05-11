@@ -30,6 +30,7 @@ public class BaseCard extends VBox {
         initializePanes(width, height);
     }
 
+
     /**
      * Initialize the left and right panes.
      */
@@ -160,22 +161,4 @@ public class BaseCard extends VBox {
         }
     }
 
-    /**
-     * Apply hover style without changing selection state.
-     * Useful for initial UI state setup.
-     */
-    public void applyHoverStyle() {
-        this.setStyle(hoverStyle);
-        this.setScaleX(hoverScale);
-        this.setScaleY(hoverScale);
-    }
-
-    /**
-     * Reset to normal style and scale.
-     */
-    public void resetHoverStyle() {
-        this.setScaleX(1.0);
-        this.setScaleY(1.0);
-        applyCurrentStyle();
-    }
 }

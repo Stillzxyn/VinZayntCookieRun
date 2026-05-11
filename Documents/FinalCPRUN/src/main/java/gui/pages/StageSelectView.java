@@ -1,7 +1,7 @@
 package gui.pages;
 
 import application.CookieRunApp;
-import gui.graphics.BaseBackgroundPane;
+import gui.baseElements.BaseBackgroundPane;
 import gui.baseElements.BaseImageButton;
 import gui.components.StagesCardRowPane;
 import gui.graphics.FontLoader;

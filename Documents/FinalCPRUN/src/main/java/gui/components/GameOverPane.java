@@ -25,9 +25,11 @@ public class GameOverPane extends Pane {
     /**
      * Create a game over pane with background image and content.
      */
-    public GameOverPane() {
+    public GameOverPane(int score , int coin) {
         this.setMaxWidth(420);
         this.setMaxHeight(234);
+        setScore(score);
+        setCoins(coin);
         buildPane();
     }
 

@@ -1,7 +1,7 @@
 package gui.pages;
 
 import application.CookieRunApp;
-import gui.graphics.BaseBackgroundPane;
+import gui.baseElements.BaseBackgroundPane;
 import audio.SoundManager;
 import gui.components.HomePageButtonPane;
 import javafx.animation.AnimationTimer;

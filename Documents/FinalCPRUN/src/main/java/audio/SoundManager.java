@@ -48,10 +48,8 @@ public class SoundManager {
      */
     public static SoundManager getInstance() {
         if (instance == null) {
-            instance = new SoundManager();
-        }
-        return instance;
-    }
+            instance = new SoundManager();}
+        return instance;}
 
     // =========================
     // SOUND EFFECT LOADING
@@ -70,8 +68,7 @@ public class SoundManager {
             Media media = new Media(resourcePath);
             soundEffects.put(name, media);
         } catch (Exception e) {
-            System.err.println("Failed to load sound effect: " + name + " from " + path);
-        }
+            System.err.println("Failed to load sound effect: " + name + " from " + path);}
     }
 
     /**
@@ -323,8 +320,7 @@ public class SoundManager {
      */
     public void resumeBackgroundMusic() {
         if (currentMusicPlayer != null) {
-            currentMusicPlayer.play();
-        }
+            currentMusicPlayer.play();}
     }
 
     /**
